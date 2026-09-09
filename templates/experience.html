@@ -7,32 +7,110 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=2">
+
+    <style>
+        .experience-section {
+            width: 100%;
+            padding: 3.5rem 0 5rem;
+        }
+        .experience-title {
+            font-size: clamp(2.8rem, 5vw, 4rem);
+            margin-bottom: 2.5rem;
+            color: #2b181e;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 700;
+        }
+        .experience-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+        .experience-card {
+            background-color: #ffffff;
+            border: 1.5px solid #f4d3db;
+            border-radius: 16px;
+            padding: 2.2rem 2.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 4px 15px rgba(229, 77, 109, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .experience-card:hover {
+            transform: translateY(-4px);
+            border-color: #e54d6d;
+            box-shadow: 0 10px 25px rgba(229, 77, 109, 0.12);
+        }
+        .badge-pill {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            background-color: #e54d6d;
+            color: #ffffff;
+            padding: 0.35rem 1rem;
+            border-radius: 9999px;
+            box-shadow: 0 2px 6px rgba(229, 77, 109, 0.25);
+            width: fit-content;
+        }
+        .card-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #2b181e;
+            line-height: 1.25;
+            margin: 0;
+        }
+        .experience-description {
+            color: #78535e;
+            font-size: 0.95rem;
+            line-height: 1.65;
+            flex: 1;
+            margin: 0;
+        }
+        .experience-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #b82346;
+            margin-top: 0.5rem;
+        }
+        .empty-state {
+            color: #78535e;
+            font-style: italic;
+            padding: 2rem 0;
+        }
+        @media (max-width: 860px) {
+            .experience-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <header class="site-header">
         <div class="container">
-            <a href="/" class="brand">{{ name }}</a>
+            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
             <nav>
-    <a href="{% url 'main:show_main' %}">Profile</a>
-    <a href="{% url 'main:show_experience' %}">Experience</a>
-</nav>
+                <a href="{% url 'main:show_main' %}">Profile</a>
+                <a href="{% url 'main:show_experience' %}">Experience</a>
+            </nav>
         </div>
     </header>
 
     <main>
         <section class="experience-section" id="experience">
             <div class="container">
-                <p class="section-kicker">Perjalanan saya sejauh ini</p>
-                <h1>Experience</h1>
+                <p class="section-kicker">Background</p>
+                <h1 class="experience-title">Experience</h1>
 
                 <div class="experience-grid">
                     {% for experience in experience_list %}
                         <article class="experience-card">
-                            <span class="experience-category">
-                                {{ experience.get_category_display }}
-                            </span>
-                            <h2>{{ experience.title }}</h2>
+                            <div>
+                                <span class="badge-pill">{{ experience.get_category_display }}</span>
+                            </div>
+                            <h2 class="card-title">{{ experience.title }}</h2>
                             <p class="experience-description">
                                 {{ experience.description }}
                             </p>
