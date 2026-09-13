@@ -1,20 +1,23 @@
+/* reset margin dan padding bawaan browser */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* variabel warna tema website */
 :root {
-    --ink: #2b181e;
-    --paper: #fef7f8;
-    --white: #ffffff;
-    --accent: #e54d6d;
-    --accent-dark: #b82346;
-    --line: #f4d3db;
-    --text-muted: #78535e;
-    --radius: 16px;
+    --ink: #2b181e;          /* warna teks utama (gelap) */
+    --paper: #fef7f8;        /* warna latar pink lembut */
+    --white: #ffffff;        /* warna latar putih */
+    --accent: #e54d6d;       /* warna aksen pink cerah */
+    --accent-dark: #b82346;  /* warna aksen merah marun */
+    --line: #f4d3db;         /* warna garis pembatas */
+    --text-muted: #78535e;   /* warna teks abu/muted */
+    --radius: 16px;          /* kelengkungan sudut kartu */
 }
 
+/* font dasar dan layout body */
 body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: var(--ink);
@@ -29,13 +32,13 @@ main {
     flex: 1;
 }
 
-
+/* font serif khusus untuk semua judul dan nama */
 h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .card-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 700;
 }
 
-/* Container Lebar Dinamis 90% */
+/* container pembungkus konten agar lebar dan rapi di tengah */
 .container {
     width: 90%;
     max-width: 1300px;
@@ -83,12 +86,14 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
     transition: color 0.2s ease;
 }
 
-.site-header nav a:hover {
+/* efek hover dan menu aktif di navbar */
+.site-header nav a:hover,
+.site-header nav a.active {
     color: var(--accent);
 }
 
 /* ================================
-   2. Hero Section (Latar Pink)
+   2. Hero / Profile Section
 ================================ */
 .hero {
     width: 100%;
@@ -114,6 +119,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
     grid-area: details;
 }
 
+/* teks kecil di atas judul */
 .hero-kicker, .section-kicker {
     font-size: 0.85rem;
     letter-spacing: 0.1em;
@@ -137,6 +143,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
     margin-bottom: 2rem;
 }
 
+/* info npm dan program studi */
 .meta-list {
     display: flex;
     gap: 3.5rem;
@@ -156,6 +163,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
     font-weight: 700;
 }
 
+/* tombol link media sosial */
 .social-links {
     display: flex;
     gap: 0.75rem;
@@ -179,6 +187,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
     transform: translateY(-2px);
 }
 
+/* foto profil dan shadow blok di belakangnya */
 .hero-photo {
     grid-area: photo;
     align-self: center;
@@ -213,9 +222,9 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
 }
 
 /* ================================
-   3. Experience Section (Latar Putih Kontras)
+   3. Experience & Projects Section
 ================================ */
-.experience {
+.experience, .experience-section {
     width: 100%;
     padding: 5rem 0 6rem;
     background-color: var(--white);
@@ -224,9 +233,8 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
 }
 
 .experience-section {
-    width: 100%;
-    padding: 4.5rem 0 6.5rem;
     background-color: var(--paper);
+    border: none;
 }
 
 .section-heading {
@@ -239,6 +247,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
     margin-top: 0.25rem;
 }
 
+/* grid 2 kolom untuk kartu pengalaman dan proyek */
 .experience-list, .experience-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -267,6 +276,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
     box-shadow: 0 10px 25px rgba(229, 77, 109, 0.12);
 }
 
+/* badge kategori (misal Web Development / Volunteer) */
 .experience-year, .badge-pill, .experience-category {
     display: inline-block;
     align-self: flex-start;
@@ -288,6 +298,18 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
     line-height: 1.3;
 }
 
+/* info tech stack pada kartu proyek */
+.project-tech {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.tech-label {
+    font-weight: 700;
+    color: var(--accent-dark);
+}
+
 .experience-content p, .experience-description {
     color: var(--text-muted);
     font-size: 0.96rem;
@@ -302,6 +324,28 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
     margin-top: 0.5rem;
 }
 
+/* link/tombol untuk melihat detail proyek */
+.project-footer {
+    margin-top: 0.5rem;
+}
+
+.project-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent-dark);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.project-btn:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+/* tampilan ketika list data masih kosong */
 .empty-state {
     color: var(--text-muted);
     font-style: italic;
@@ -309,7 +353,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
 }
 
 /* ================================
-   4. Education Section (Latar Pink)
+   4. Education Section
 ================================ */
 .education {
     width: 100%;
@@ -366,7 +410,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
 }
 
 /* ================================
-   5. Skills Section (Latar Putih Kontras)
+   5. Skills Section
 ================================ */
 .skills {
     width: 100%;
@@ -410,7 +454,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
 }
 
 /* ================================
-   6. Footer (Latar Pink)
+   6. Footer
 ================================ */
 .site-footer {
     padding: 2.5rem 1rem;
@@ -423,13 +467,14 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
 }
 
 /* ================================
-   7. Responsiveness
+   7. Responsiveness (Mobile & Tablet)
 ================================ */
 @media (max-width: 960px) {
     .container {
         width: 92%;
     }
 
+    /* susun foto dan teks jadi 1 kolom di layar sedang */
     .hero-grid {
         grid-template-columns: 1fr;
         grid-template-areas:
@@ -458,6 +503,7 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
         justify-content: center;
     }
 
+    /* kartu pengalaman, proyek, dan skill otomatis 1 kolom di HP/tablet */
     .experience-list, .experience-grid, .education-list, .skills-grid {
         grid-template-columns: 1fr;
         gap: 1.75rem;

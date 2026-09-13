@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - {{ name }}</title>
+    <!-- font google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- file css -->
+    <link rel="stylesheet" href="/static/css/style.css?v=25">
+</head>
+<body>
+    <!-- navbar navigasi -->
+    <header class="site-header">
+        <div class="container">
+            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
+            <nav>
+                <a href="{% url 'main:show_main' %}">Profile</a>
+                <a href="{% url 'main:show_experience' %}">Experience</a>
+                <a href="{% url 'main:show_projects' %}" class="active">Projects</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- section daftar proyek -->
+        <section class="experience-section" id="projects">
+            <div class="container">
+                <p class="section-kicker">PORTFOLIO</p>
+                <h1 class="experience-title">Projects</h1>
+
+                <!-- grid daftar kartu proyek -->
+                <div class="experience-grid">
+                    <!-- looping data proyek dari database -->
+                    {% for project in project_list %}
+                        <article class="experience-card">
+                            <!-- badge kategori proyek -->
+                            <div class="badge-wrapper">
+                                <span class="badge-pill">{{ project.category }}</span>
+                            </div>
+
+                            <h2 class="card-title">{{ project.title }}</h2>
+
+                            <!-- tech stack yang dipakai -->
+                            {% if project.tech_stack %}
+                                <div class="project-tech">
+                                    <span class="tech-label">Tech:</span> {{ project.tech_stack }}
+                                </div>
+                            {% endif %}
+
+                            <!-- deskripsi proyek -->
+                            <p class="experience-description">
+                                {{ project.description|linebreaksbr }}
+                            </p>
+
+                            <!-- link repo github / demo -->
+                            {% if project.project_url %}
+                                <div class="project-footer">
+                                    <a href="{{ project.project_url }}" target="_blank" rel="noopener noreferrer" class="project-btn">
+                                        View Project &rarr;
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </article>
+                    <!-- pesan jika data proyek masih kosong -->
+                    {% empty %}
+                        <p class="empty-state">
+                            Belum ada proyek yang ditambahkan.
+                        </p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- footer halaman -->
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+        </div>
+    </footer>
+</body>
+</html>
