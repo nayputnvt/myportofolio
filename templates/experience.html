@@ -1,14 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Experience - {{ name }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=2">
+{% extends 'base.html' %}
+{% load static %}
 
+{% block title %}Experience - {{ name }}{% endblock %}
+
+{% block meta %}
+    <!-- style khusus halaman daftar pengalaman -->
     <style>
         .experience-section {
             width: 100%;
@@ -16,10 +12,26 @@
         }
         .experience-title {
             font-size: clamp(2.8rem, 5vw, 4rem);
-            margin-bottom: 2.5rem;
+            margin-bottom: 1.5rem;
             color: #2b181e;
             font-family: 'Playfair Display', Georgia, serif;
             font-weight: 700;
+        }
+        .btn-add-experience {
+            display: inline-block;
+            background-color: #e54d6d;
+            color: #ffffff;
+            padding: 0.65rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(229, 77, 109, 0.25);
+            margin-bottom: 2.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-add-experience:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(229, 77, 109, 0.35);
         }
         .experience-grid {
             display: grid;
@@ -86,25 +98,23 @@
             }
         }
     </style>
-</head>
-<body>
-    <header class="site-header">
-        <div class="container">
-            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
-            <nav>
-                <a href="{% url 'main:show_main' %}">Profile</a>
-                <a href="{% url 'main:show_experience' %}">Experience</a>
-                <a href="{% url 'main:show_projects' %}">Projects</a>
-            </nav>
-        </div>
-    </header>
+{% endblock meta %}
 
-    <main>
+{% block content %}
+        <!-- section daftar pengalaman -->
         <section class="experience-section" id="experience">
             <div class="container">
                 <p class="section-kicker">Background</p>
                 <h1 class="experience-title">Experience</h1>
 
+                <!-- tombol navigasi tambah pengalaman baru -->
+                <div>
+                    <a href="{% url 'main:create_experience' %}" class="btn-add-experience">
+                        + Tambah Pengalaman
+                    </a>
+                </div>
+
+                <!-- grid daftar kartu pengalaman -->
                 <div class="experience-grid">
                     {% for experience in experience_list %}
                         <article class="experience-card">
@@ -130,12 +140,4 @@
                 </div>
             </div>
         </section>
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
-        </div>
-    </footer>
-</body>
-</html>
+{% endblock content %}
