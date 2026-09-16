@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from django.core import serializers
 from main.models import Experience, Project
 from main.forms import ExperienceForm
+from django.db.models import Q 
 
 # Halaman profil / home
 def show_main(request):
@@ -23,11 +26,22 @@ def show_experience(request):
     }
     return render(request, "experience.html", context)
 
-# Halaman daftar proyek
+# Halaman daftar proyek (dengan fitur pencarian)
 def show_projects(request):
+    search_query = request.GET.get('q', '').strip()
+    if search_query:
+        # Filter berdasarkan nama proyek (title) atau tech_stack atau deskripsi
+        projects = Project.objects.filter(
+            Q(title__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(tech_stack__icontains=search_query)
+        )
+    else:
+        projects = Project.objects.all()
     context = {
         "name": "Nayla",
-        "project_list": Project.objects.all(),
+        "project_list": projects,
+        "search_query": search_query,
     }
     return render(request, "projects.html", context)
 
@@ -44,3 +58,23 @@ def create_experience(request):
         "form": form,
     }
     return render(request, "create_experience.html", context)
+
+# Mengembalikan seluruh data pengalaman dalam format XML
+def show_xml(request):
+    data = Experience.objects.all()
+    return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
+
+# Mengembalikan seluruh data pengalaman dalam format JSON
+def show_json(request):
+    data = Experience.objects.all()
+    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+
+# Mengembalikan 1 data pengalaman berdasarkan ID dalam format XML
+def show_xml_by_id(request, id):
+    data = Experience.objects.filter(pk=id)
+    return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
+
+# Mengembalikan 1 data pengalaman berdasarkan ID dalam format JSON
+def show_json_by_id(request, id):
+    data = Experience.objects.filter(pk=id)
+    return HttpResponse(serializers.serialize("json", data), content_type="application/json")

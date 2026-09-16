@@ -3,38 +3,224 @@
 
 {% block title %}Projects - {{ name }}{% endblock %}
 
+{% block meta %}
+    <!-- style khusus halaman daftar proyek -->
+    <style>
+        .projects-section {
+            width: 100%;
+            padding: 3.5rem 0 5rem;
+        }
+        .section-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .projects-title {
+            font-size: clamp(2.8rem, 5vw, 4rem);
+            margin: 0;
+            color: #2b181e;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        /* tombol tambah proyek di kanan */
+        .btn-add-project {
+            display: inline-block;
+            background-color: #e54d6d;
+            color: #ffffff;
+            padding: 0.65rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(229, 77, 109, 0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-add-project:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(229, 77, 109, 0.35);
+        }
+        /* form pencarian full-width seperti di modul */
+        .search-bar-container {
+            display: flex;
+            gap: 0.75rem;
+            width: 100%;
+            margin-bottom: 2.5rem;
+        }
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1.25rem;
+            border: 1.5px solid #f4d3db;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            background-color: #ffffff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .search-input:focus {
+            border-color: #e54d6d;
+            box-shadow: 0 0 0 3px rgba(229, 77, 109, 0.15);
+        }
+        .btn-search {
+            background-color: #e54d6d;
+            color: #ffffff;
+            border: none;
+            padding: 0.75rem 1.8rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(229, 77, 109, 0.2);
+        }
+        .btn-search:hover {
+            background-color: #b82346;
+            transform: translateY(-1px);
+        }
+        .btn-reset {
+            background-color: #fdf0f3;
+            color: #b82346;
+            border: 1.5px solid #f4d3db;
+            padding: 0.75rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        /* grid kartu proyek */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+        .project-card {
+            background-color: #ffffff;
+            border: 1.5px solid #f4d3db;
+            border-radius: 16px;
+            padding: 2.2rem 2.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 4px 15px rgba(229, 77, 109, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .project-card:hover {
+            transform: translateY(-4px);
+            border-color: #e54d6d;
+            box-shadow: 0 10px 25px rgba(229, 77, 109, 0.12);
+        }
+        .badge-pill {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            background-color: #e54d6d;
+            color: #ffffff;
+            padding: 0.35rem 1rem;
+            border-radius: 9999px;
+            box-shadow: 0 2px 6px rgba(229, 77, 109, 0.25);
+            width: fit-content;
+        }
+        .card-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #2b181e;
+            line-height: 1.25;
+            margin: 0;
+        }
+        .project-tech {
+            font-size: 0.85rem;
+            color: #b82346;
+            font-weight: 600;
+        }
+        .tech-label {
+            color: #78535e;
+            font-weight: normal;
+        }
+        .project-description {
+            color: #78535e;
+            font-size: 0.95rem;
+            line-height: 1.65;
+            flex: 1;
+            margin: 0;
+        }
+        .project-btn {
+            display: inline-block;
+            color: #e54d6d;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .project-btn:hover {
+            text-decoration: underline;
+        }
+        .empty-state {
+            color: #78535e;
+            font-style: italic;
+            padding: 2rem 0;
+        }
+        @media (max-width: 860px) {
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+            .section-header-flex {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+{% endblock meta %}
+
 {% block content %}
-        <!-- section daftar proyek -->
-        <section class="experience-section" id="projects">
+        <section class="projects-section" id="projects">
             <div class="container">
-                <p class="section-kicker">PORTFOLIO</p>
-                <h1 class="experience-title">Projects</h1>
+                <p class="section-kicker">FEATURED WORKS</p>
+                
+                <!-- header dengan judul dan tombol tambah proyek -->
+                <div class="section-header-flex">
+                    <h1 class="projects-title">Projects</h1>
+                </div>
+
+                <!-- form pencarian proyek seperti di tutorial -->
+                <form method="GET" action="{% url 'main:show_projects' %}" class="search-bar-container">
+                    <input 
+                        type="text" 
+                        name="q" 
+                        value="{{ search_query }}" 
+                        placeholder="Search by project name..." 
+                        class="search-input"
+                    >
+                    <button type="submit" class="btn-search">Search</button>
+                    {% if search_query %}
+                        <a href="{% url 'main:show_projects' %}" class="btn-reset">Reset</a>
+                    {% endif %}
+                </form>
 
                 <!-- grid daftar kartu proyek -->
-                <div class="experience-grid">
-                    <!-- looping data proyek dari database -->
+                <div class="projects-grid">
                     {% for project in project_list %}
-                        <article class="experience-card">
-                            <!-- badge kategori proyek -->
+                        <article class="project-card">
                             <div class="badge-wrapper">
                                 <span class="badge-pill">{{ project.category }}</span>
                             </div>
 
                             <h2 class="card-title">{{ project.title }}</h2>
 
-                            <!-- tech stack yang dipakai -->
                             {% if project.tech_stack %}
                                 <div class="project-tech">
                                     <span class="tech-label">Tech:</span> {{ project.tech_stack }}
                                 </div>
                             {% endif %}
 
-                            <!-- deskripsi proyek -->
-                            <p class="experience-description">
+                            <p class="project-description">
                                 {{ project.description|linebreaksbr }}
                             </p>
 
-                            <!-- link repo github / demo -->
                             {% if project.project_url %}
                                 <div class="project-footer">
                                     <a href="{{ project.project_url }}" target="_blank" rel="noopener noreferrer" class="project-btn">
@@ -43,10 +229,13 @@
                                 </div>
                             {% endif %}
                         </article>
-                    <!-- pesan jika data proyek masih kosong -->
                     {% empty %}
                         <p class="empty-state">
-                            Belum ada proyek yang ditambahkan.
+                            {% if search_query %}
+                                Tidak ditemukan proyek dengan kata kunci "{{ search_query }}".
+                            {% else %}
+                                Belum ada proyek yang ditambahkan.
+                            {% endif %}
                         </p>
                     {% endfor %}
                 </div>

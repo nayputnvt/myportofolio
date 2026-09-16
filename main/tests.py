@@ -107,3 +107,49 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Belum ada proyek yang ditambahkan.")
+
+    # test akses halaman form tambah pengalaman (GET)
+    def test_create_experience_page_accessible(self):
+        response = self.client.get(reverse("main:create_experience"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "create_experience.html")
+
+    # test submit form tambah pengalaman berhasil menyimpan data (POST)
+    def test_create_experience_post_success(self):
+        response = self.client.post(reverse("main:create_experience"), {
+            "title": "Graphic Designer",
+            "description": "Membuat aset visual dan promosi event kampus.",
+            "category": "volunteer",
+        })
+
+        self.assertEqual(response.status_code, 302)  # redirect ke experience list
+        self.assertTrue(Experience.objects.filter(title="Graphic Designer").exists())
+
+    # test delivery seluruh data format XML
+    def test_show_xml_status_and_content_type(self):
+        response = self.client.get(reverse("main:show_xml"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/xml")
+
+    # test delivery seluruh data format JSON
+    def test_show_json_status_and_content_type(self):
+        response = self.client.get(reverse("main:show_json"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+    # test delivery data by id format XML
+    def test_show_xml_by_id(self):
+        response = self.client.get(reverse("main:show_xml_by_id", args=[str(self.experience.id)]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/xml")
+
+    # test delivery data by id format JSON
+    def test_show_json_by_id(self):
+        response = self.client.get(reverse("main:show_json_by_id", args=[str(self.experience.id)]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
