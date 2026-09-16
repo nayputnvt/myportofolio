@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.core import serializers
-from main.models import Experience, Project
-from main.forms import ExperienceForm
 from django.db.models import Q 
+from main.models import Experience, Project
+from main.forms import ExperienceForm, ProjectForm
 
 # Halaman profil / home
 def show_main(request):
@@ -58,6 +58,64 @@ def create_experience(request):
         "form": form,
     }
     return render(request, "create_experience.html", context)
+
+# Form tambah proyek baru
+def create_project(request):
+    form = ProjectForm(request.POST or None)
+
+    if form.is_valid() and request.method == "POST":
+        form.save()
+        return redirect('main:show_projects')
+
+    context = {
+        "name": "Nayla",
+        "form": form,
+    }
+    return render(request, "create_project.html", context)
+
+# Fungsi untuk mengedit proyek yang sudah ada
+def edit_project(request, id):
+    project = Project.objects.get(pk=id)
+    form = ProjectForm(request.POST or None, instance=project)
+
+    if form.is_valid() and request.method == "POST":
+        form.save()
+        return redirect('main:show_projects')
+
+    context = {
+        "name": "Nayla",
+        "form": form,
+        "project": project,
+    }
+    return render(request, "edit_project.html", context)
+
+# Fungsi untuk menghapus proyek
+def delete_project(request, id):
+    project = Project.objects.get(pk=id)
+    project.delete()
+    return redirect('main:show_projects')
+
+# Fungsi untuk mengedit pengalaman
+def edit_experience(request, id):
+    experience = Experience.objects.get(pk=id)
+    form = ExperienceForm(request.POST or None, instance=experience)
+
+    if form.is_valid() and request.method == "POST":
+        form.save()
+        return redirect('main:show_experience')
+
+    context = {
+        "name": "Nayla",
+        "form": form,
+        "experience": experience,
+    }
+    return render(request, "edit_experience.html", context)
+
+# Fungsi untuk menghapus pengalaman
+def delete_experience(request, id):
+    experience = Experience.objects.get(pk=id)
+    experience.delete()
+    return redirect('main:show_experience')
 
 # Mengembalikan seluruh data pengalaman dalam format XML
 def show_xml(request):

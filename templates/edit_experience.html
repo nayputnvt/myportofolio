@@ -1,10 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Add Project - {{ name }}{% endblock %}
+{% block title %}Edit Experience - {{ name }}{% endblock %}
 
 {% block meta %}
-    <!-- style khusus halaman form tambah proyek -->
     <style>
         .form-section {
             width: 100%;
@@ -42,7 +41,7 @@
             width: 30%;
         }
         .form-table input[type="text"], 
-        .form-table input[type="url"], 
+        .form-table input[type="url"],
         .form-table textarea, 
         .form-table select {
             width: 100%;
@@ -95,29 +94,23 @@
 {% endblock meta %}
 
 {% block content %}
-        <!-- section form tambah proyek -->
-        <section class="form-section">
-            <div class="container">
-                <div class="form-card">
-                    <h1 class="form-title">Add Project</h1>
+    <section class="form-section">
+        <div class="container">
+            <div class="form-card">
+                <h1 class="form-title">Edit Experience</h1>
 
-                    <!-- form input proyek baru -->
-                    <form method="POST">
-                        <!-- token keamanan csrf django -->
-                        {% csrf_token %}
-                        
-                        <!-- tabel input field dari model form -->
-                        <table class="form-table">
-                            {{ form.as_table }}
-                        </table>
-                        
-                        <!-- tombol aksi simpan dan batal -->
-                        <div class="form-actions">
-                            <a href="{% url 'main:show_projects' %}" class="btn-cancel">Batal</a>
-                            <input type="submit" value="Simpan Proyek" class="btn-submit">
-                        </div>
-                    </form>
-                </div>
+                <form method="POST">
+                    {% csrf_token %}
+                    <table class="form-table">
+                        {{ form.as_table }}
+                    </table>
+                    
+                    <div class="form-actions">
+                        <a href="{% url 'main:show_experience' %}" class="btn-cancel">Batal</a>
+                        <input type="submit" value="Simpan Perubahan" class="btn-submit">
+                    </div>
+                </form>
             </div>
-        </section>
+        </div>
+    </section>
 {% endblock content %}

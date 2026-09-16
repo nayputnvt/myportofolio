@@ -4,7 +4,7 @@
 {% block title %}Add Project - {{ name }}{% endblock %}
 
 {% block meta %}
-    <!-- style khusus halaman form tambah proyek -->
+    <!-- style form tambah proyek -->
     <style>
         .form-section {
             width: 100%;
@@ -95,23 +95,17 @@
 {% endblock meta %}
 
 {% block content %}
-        <!-- section form tambah proyek -->
         <section class="form-section">
             <div class="container">
                 <div class="form-card">
-                    <h1 class="form-title">Add Project</h1>
+                    <h1 class="form-title">Add New Project</h1>
 
-                    <!-- form input proyek baru -->
                     <form method="POST">
-                        <!-- token keamanan csrf django -->
                         {% csrf_token %}
-                        
-                        <!-- tabel input field dari model form -->
                         <table class="form-table">
                             {{ form.as_table }}
                         </table>
                         
-                        <!-- tombol aksi simpan dan batal -->
                         <div class="form-actions">
                             <a href="{% url 'main:show_projects' %}" class="btn-cancel">Batal</a>
                             <input type="submit" value="Simpan Proyek" class="btn-submit">
