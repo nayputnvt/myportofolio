@@ -13,6 +13,10 @@ from main.views import (
     show_json,
     show_xml_by_id,
     show_json_by_id,
+    show_project_xml,
+    show_project_json,
+    show_project_xml_by_id,
+    show_project_json_by_id,
 )
 
 app_name = 'main'
@@ -38,4 +42,10 @@ urlpatterns = [
     path('json/', show_json, name='show_json'),
     path('xml/<str:id>/', show_xml_by_id, name='show_xml_by_id'),
     path('json/<str:id>/', show_json_by_id, name='show_json_by_id'),
+
+    # Data Delivery Project (XML & JSON)
+    path('projects/xml/', show_project_xml, name='show_project_xml'),
+    path('projects/json/', show_project_json, name='show_project_json'),
+    path('projects/xml/<str:id>/', show_project_xml_by_id, name='show_project_xml_by_id'),
+    path('projects/json/<str:id>/', show_project_json_by_id, name='show_project_json_by_id'),
 ]

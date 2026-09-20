@@ -136,3 +136,23 @@ def show_xml_by_id(request, id):
 def show_json_by_id(request, id):
     data = Experience.objects.filter(pk=id)
     return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+
+# Mengembalikan seluruh data proyek dalam format XML
+def show_project_xml(request):
+    data = Project.objects.all()
+    return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
+
+# Mengembalikan seluruh data proyek dalam format JSON
+def show_project_json(request):
+    data = Project.objects.all()
+    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+
+# Mengembalikan 1 data proyek berdasarkan ID dalam format XML
+def show_project_xml_by_id(request, id):
+    data = Project.objects.filter(pk=id)
+    return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
+
+# Mengembalikan 1 data proyek berdasarkan ID dalam format JSON
+def show_project_json_by_id(request, id):
+    data = Project.objects.filter(pk=id)
+    return HttpResponse(serializers.serialize("json", data), content_type="application/json")

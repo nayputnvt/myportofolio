@@ -16,7 +16,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "nayla-putri53-myportofolio.pws.cs.ui.ac.id"]
+# Izinkan semua host dan origin PWS
+ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://nayla-putri53-myportofolio.pws.cs.ui.ac.id",
@@ -24,6 +25,12 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1",
     "http://localhost",
 ]
+
+# Konfigurasi Reverse Proxy SSL untuk PWS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 

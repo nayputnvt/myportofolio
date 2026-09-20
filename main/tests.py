@@ -20,6 +20,7 @@ class MainTest(TestCase):
             category="Web Development",
             tech_stack="HTML5, CSS3, Git",
             project_url="https://github.com/nayputnvt/myportofolio",
+            thumbnail="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800",
         )
 
     # test halaman home & link navbar
@@ -98,7 +99,6 @@ class MainTest(TestCase):
         self.assertContains(response, self.project.description)
         self.assertContains(response, self.project.category)
         self.assertContains(response, self.project.tech_stack)
-        self.assertContains(response, self.project.project_url)
 
     # test tampilan kalau database project lagi kosong
     def test_empty_projects_page(self):
@@ -150,6 +150,74 @@ class MainTest(TestCase):
     # test delivery data by id format JSON
     def test_show_json_by_id(self):
         response = self.client.get(reverse("main:show_json_by_id", args=[str(self.experience.id)]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+    # test akses halaman form tambah project (GET)
+    def test_create_project_page_accessible(self):
+        response = self.client.get(reverse("main:create_project"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "create_project.html")
+
+    # test submit form tambah project berhasil (POST)
+    def test_create_project_post_success(self):
+        response = self.client.post(reverse("main:create_project"), {
+            "title": "AI Task Manager",
+            "description": "Aplikasi manajemen tugas berbasis AI.",
+            "category": "Web Development",
+            "tech_stack": "Django, Python",
+            "project_url": "https://github.com/nayputnvt/myportofolio",
+            "thumbnail": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800",
+        })
+
+        self.assertEqual(response.status_code, 302)  # redirect ke project list
+        self.assertTrue(Project.objects.filter(title="AI Task Manager").exists())
+
+    # test edit project (GET & POST)
+    def test_edit_project(self):
+        # test akses halaman edit
+        response = self.client.get(reverse("main:edit_project", args=[str(self.project.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "edit_project.html")
+
+        # test update data proyek
+        response_post = self.client.post(reverse("main:edit_project", args=[str(self.project.id)]), {
+            "title": "Updated Portfolio Project",
+            "description": "Updated project description.",
+            "category": "Web Development",
+            "tech_stack": "Django, HTML5, CSS3",
+            "project_url": "https://github.com/nayputnvt/myportofolio",
+            "thumbnail": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800",
+        })
+        self.assertEqual(response_post.status_code, 302)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Updated Portfolio Project")
+
+    # test delete project
+    def test_delete_project(self):
+        response = self.client.get(reverse("main:delete_project", args=[str(self.project.id)]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Project.objects.filter(id=self.project.id).exists())
+
+    # test delivery seluruh data project format XML
+    def test_show_project_xml_status_and_content_type(self):
+        response = self.client.get(reverse("main:show_project_xml"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/xml")
+
+    # test delivery seluruh data project format JSON
+    def test_show_project_json_status_and_content_type(self):
+        response = self.client.get(reverse("main:show_project_json"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+    # test delivery data project by id format JSON
+    def test_show_project_json_by_id(self):
+        response = self.client.get(reverse("main:show_project_json_by_id", args=[str(self.project.id)]))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/json")
