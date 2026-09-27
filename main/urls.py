@@ -10,6 +10,7 @@ from main.views import (
     edit_experience,
     delete_experience,
     toggle_star,
+    toggle_experience_star,
     register,
     login_user,
     logout_user,
@@ -36,10 +37,11 @@ urlpatterns = [
     path('login/', login_user, name='login'),
     path('logout/', logout_user, name='logout'),
 
-    # Form Experience
+    # Form Experience & Star
     path('create-experience/', create_experience, name='create_experience'),
     path('edit-experience/<str:id>/', edit_experience, name='edit_experience'),
     path('delete-experience/<str:id>/', delete_experience, name='delete_experience'),
+    path('experience/star/<str:id>/', toggle_experience_star, name='toggle_experience_star'),
 
     # Form Project & Star
     path('create-project/', create_project, name='create_project'),

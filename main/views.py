@@ -67,9 +67,12 @@ def show_main(request):
 
 # Halaman daftar pengalaman
 def show_experience(request):
+    # Cek apakah pengguna memiliki hak akses Editor atau Superuser
+    is_editor = request.user.is_authenticated and (request.user.is_superuser or request.user.groups.filter(name='Editor').exists())
     context = {
         "name": "Nayla",
         "experience_list": Experience.objects.all(),
+        "is_editor": is_editor,
     }
     return render(request, "experience.html", context)
 
@@ -85,16 +88,21 @@ def show_projects(request):
         )
     else:
         projects = Project.objects.all()
+    
+    # Cek apakah pengguna memiliki hak akses Editor atau Superuser
+    is_editor = request.user.is_authenticated and (request.user.is_superuser or request.user.groups.filter(name='Editor').exists())
     context = {
         "name": "Nayla",
         "project_list": projects,
         "search_query": search_query,
+        "is_editor": is_editor,
     }
     return render(request, "projects.html", context)
 
 # Form tambah pengalaman baru
 @login_required(login_url="/login/")
 def create_experience(request):
+    # Hanya Superuser (pemilik portofolio) yang boleh membuat data baru
     if not request.user.is_superuser:
         raise PermissionDenied
 
@@ -113,6 +121,7 @@ def create_experience(request):
 # Form tambah proyek baru
 @login_required(login_url="/login/")
 def create_project(request):
+    # Hanya Superuser (pemilik portofolio) yang boleh membuat proyek baru
     if not request.user.is_superuser:
         raise PermissionDenied
 
@@ -131,7 +140,8 @@ def create_project(request):
 # Fungsi untuk mengedit proyek yang sudah ada
 @login_required(login_url="/login/")
 def edit_project(request, id):
-    if not request.user.is_superuser:
+    # Superuser dan Editor diizinkan untuk mengubah data proyek
+    if not (request.user.is_superuser or request.user.groups.filter(name='Editor').exists()):
         raise PermissionDenied
 
     project = get_object_or_404(Project, pk=id)
@@ -151,6 +161,7 @@ def edit_project(request, id):
 # Fungsi untuk menghapus proyek
 @login_required(login_url="/login/")
 def delete_project(request, id):
+    # Hanya Superuser yang boleh menghapus data proyek
     if not request.user.is_superuser:
         raise PermissionDenied
 
@@ -174,7 +185,8 @@ def toggle_star(request, id):
 # Fungsi untuk mengedit pengalaman
 @login_required(login_url="/login/")
 def edit_experience(request, id):
-    if not request.user.is_superuser:
+    # Superuser dan Editor diizinkan untuk mengubah data pengalaman
+    if not (request.user.is_superuser or request.user.groups.filter(name='Editor').exists()):
         raise PermissionDenied
 
     experience = get_object_or_404(Experience, pk=id)
@@ -194,11 +206,25 @@ def edit_experience(request, id):
 # Fungsi untuk menghapus pengalaman
 @login_required(login_url="/login/")
 def delete_experience(request, id):
+    # Hanya Superuser yang boleh menghapus data pengalaman
     if not request.user.is_superuser:
         raise PermissionDenied
 
     experience = get_object_or_404(Experience, pk=id)
     experience.delete()
+    return redirect('main:show_experience')
+
+# Fungsi untuk memberi atau membatalkan star pada pengalaman
+@login_required(login_url="/login/")
+def toggle_experience_star(request, id):
+    experience = get_object_or_404(Experience, pk=id)
+
+    if request.method == "POST":
+        if request.user in experience.starred_by.all():
+            experience.starred_by.remove(request.user)
+        else:
+            experience.starred_by.add(request.user)
+
     return redirect('main:show_experience')
 
 # Mengembalikan seluruh data pengalaman dalam format XML
@@ -209,7 +235,7 @@ def show_xml(request):
 # Mengembalikan seluruh data pengalaman dalam format JSON
 def show_json(request):
     data = Experience.objects.all()
-    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+    return HttpResponse(serializers.serialize("json", data, use_natural_foreign_keys=True), content_type="application/json")
 
 # Mengembalikan 1 data pengalaman berdasarkan ID dalam format XML
 def show_xml_by_id(request, id):
@@ -219,7 +245,7 @@ def show_xml_by_id(request, id):
 # Mengembalikan 1 data pengalaman berdasarkan ID dalam format JSON
 def show_json_by_id(request, id):
     data = Experience.objects.filter(pk=id)
-    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+    return HttpResponse(serializers.serialize("json", data, use_natural_foreign_keys=True), content_type="application/json")
 
 # Mengembalikan seluruh data proyek dalam format XML
 def show_project_xml(request):

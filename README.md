@@ -77,8 +77,9 @@ Dalam pengerjaan Tugas 2 ini, saya memanfaatkan AI Assistant (Gemini) secara tra
      - Proses *serialization* berfungsi sebagai penerjemah yang mengekstrak nilai field dari objek model Python dan mengubahnya menjadi format teks standar (JSON) yang terstruktur, netral, dan dapat dikonsumsi oleh bahasa pemrograman atau platform apapun di sisi client.
 
 **Penggunaan AI:**
-Dalam pengerjaan Tugas 3 ini, saya memanfaatkan AI Assistant (Google Gemini) secara transparan sebagai rekan diskusi (*thought partner*) untuk memperdalam pemahaman konsep Django. Diskusi difokuskan pada pemahaman cara kerja `ModelForm` dan validasinya, mekanisme keamanan CSRF, efisiensi data delivery JSON vs XML, alur serialisasi data, serta perancangan skenario unit test.
+Dalam menyelesaikan Tugas 3 ini, saya memanfaatkan AI Assistant (Google Gemini) secara transparan sebagai rekan diskusi (*learning companion*) untuk memperdalam pemahaman konsep Django.
 
+Diskusi difokuskan pada pemahaman cara kerja `ModelForm` dan validasinya, mekanisme keamanan CSRF, efisiensi data delivery JSON vs XML, alur serialisasi data, serta perancangan skenario unit test.
 Seluruh penulisan kode (model, form, views, URL, template), perbaikan logika, hingga verifikasi 23 skenario unit test tetap saya pelajari, kerjakan, dan uji secara mandiri pada proyek `myportofolio`.
 
-* **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi PBP di Google Gemini](https://gemini.google.com/share/d/1-AZDerg8HxhMeNabr6V2gadfEUQsHv-e?usp=sharing)
+* **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi PBP di Google Gemini](https://gemini.google.com/share/d/1x9N04SH-viI2-Nxy0Yd7ljqCvqXOKy95?usp=sharing)
