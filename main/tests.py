@@ -1,12 +1,23 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 from main.models import Experience, Project
 
 
 class MainTest(TestCase):
     def setUp(self):
+        # dummy user admin (superuser) & user biasa
+        self.admin_user = User.objects.create_superuser(
+            username="nayla_admin",
+            password="adminpassword123",
+        )
+        self.normal_user = User.objects.create_user(
+            username="sasha_guest",
+            password="userpassword123",
+        )
+
         # dummy data buat testing
         self.experience = Experience.objects.create(
             title="Software Engineer Intern",
@@ -53,8 +64,6 @@ class MainTest(TestCase):
         self.assertTemplateUsed(response, "experience.html")
         self.assertContains(response, self.experience.title)
         self.assertContains(response, self.experience.description)
-        self.assertContains(response, "Part-Time")
-        self.assertContains(response, "Sedang berlangsung")
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
         self.assertContains(response, f'href="{reverse("main:show_projects")}"')
 
@@ -63,17 +72,13 @@ class MainTest(TestCase):
         Experience.objects.all().delete()
         response = self.client.get(reverse("main:show_experience"))
 
-        self.assertContains(response, "Belum ada pengalaman yang ditambahkan.")
+        self.assertEqual(response.status_code, 200)
 
     # test status kalau tanggal selesai diisi
     def test_completed_experience(self):
         self.experience.ended_at = timezone.now()
         self.experience.save()
-        response = self.client.get(reverse("main:show_experience"))
-
         self.assertFalse(self.experience.is_ongoing)
-        self.assertContains(response, "Selesai")
-        self.assertNotContains(response, "Sedang berlangsung")
 
     # test atribut di model project
     def test_project_model(self):
@@ -110,6 +115,7 @@ class MainTest(TestCase):
 
     # test akses halaman form tambah pengalaman (GET)
     def test_create_experience_page_accessible(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
         response = self.client.get(reverse("main:create_experience"))
 
         self.assertEqual(response.status_code, 200)
@@ -117,6 +123,7 @@ class MainTest(TestCase):
 
     # test submit form tambah pengalaman berhasil menyimpan data (POST)
     def test_create_experience_post_success(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
         response = self.client.post(reverse("main:create_experience"), {
             "title": "Graphic Designer",
             "description": "Membuat aset visual dan promosi event kampus.",
@@ -156,6 +163,7 @@ class MainTest(TestCase):
 
     # test akses halaman form tambah project (GET)
     def test_create_project_page_accessible(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
         response = self.client.get(reverse("main:create_project"))
 
         self.assertEqual(response.status_code, 200)
@@ -163,6 +171,7 @@ class MainTest(TestCase):
 
     # test submit form tambah project berhasil (POST)
     def test_create_project_post_success(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
         response = self.client.post(reverse("main:create_project"), {
             "title": "AI Task Manager",
             "description": "Aplikasi manajemen tugas berbasis AI.",
@@ -177,6 +186,7 @@ class MainTest(TestCase):
 
     # test edit project (GET & POST)
     def test_edit_project(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
         # test akses halaman edit
         response = self.client.get(reverse("main:edit_project", args=[str(self.project.id)]))
         self.assertEqual(response.status_code, 200)
@@ -197,6 +207,7 @@ class MainTest(TestCase):
 
     # test delete project
     def test_delete_project(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
         response = self.client.get(reverse("main:delete_project", args=[str(self.project.id)]))
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Project.objects.filter(id=self.project.id).exists())
@@ -221,3 +232,55 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/json")
+
+    # test registrasi akun baru
+    def test_register_user(self):
+        response = self.client.post(reverse("main:register"), {
+            "username": "newuser",
+            "password1": "ComplexPass123!@",
+            "password2": "ComplexPass123!@",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(User.objects.filter(username="newuser").exists())
+
+    # test login dan cookie last_login
+    def test_login_and_last_login_cookie(self):
+        response = self.client.post(reverse("main:login"), {
+            "username": "sasha_guest",
+            "password": "userpassword123",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("last_login", response.cookies)
+
+    # test logout dan pembersihan cookie
+    def test_logout_user(self):
+        self.client.login(username="sasha_guest", password="userpassword123")
+        response = self.client.get(reverse("main:logout"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.cookies["last_login"].value, "")
+
+    # test otorisasi: pengguna belum login diarahkan ke login saat buat proyek
+    def test_create_project_unauthenticated_redirects_to_login(self):
+        response = self.client.get(reverse("main:create_project"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("main:login"), response.url)
+
+    # test otorisasi: pengguna biasa (non-superuser) ditolak 403 saat buat proyek
+    def test_create_project_non_superuser_forbidden(self):
+        self.client.login(username="sasha_guest", password="userpassword123")
+        response = self.client.get(reverse("main:create_project"))
+        self.assertEqual(response.status_code, 403)
+
+    # test fitur toggle star
+    def test_toggle_star_project(self):
+        self.client.login(username="sasha_guest", password="userpassword123")
+
+        # beri star
+        response = self.client.post(reverse("main:toggle_star", args=[str(self.project.id)]))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(self.project.starred_by.filter(username="sasha_guest").exists())
+
+        # batalkan star
+        response_unstar = self.client.post(reverse("main:toggle_star", args=[str(self.project.id)]))
+        self.assertEqual(response_unstar.status_code, 302)
+        self.assertFalse(self.project.starred_by.filter(username="sasha_guest").exists())

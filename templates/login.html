@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Login - {{ name }}{% endblock %}
+
+{% block meta %}
+    <style>
+        .auth-container {
+            width: 100%;
+            min-height: 70vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem 1.5rem;
+        }
+        .auth-card {
+            background-color: #ffffff;
+            border: 1.5px solid #f4d3db;
+            border-radius: 20px;
+            padding: 2.8rem 2.4rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 10px 30px rgba(229, 77, 109, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .auth-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #2b181e;
+            text-align: center;
+            margin: 0 0 0.5rem;
+        }
+        .auth-subtitle {
+            text-align: center;
+            color: #78535e;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .form-group label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #2b181e;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1.1rem;
+            border: 1.5px solid #f4d3db;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            border-color: #e54d6d;
+            box-shadow: 0 0 0 3px rgba(229, 77, 109, 0.15);
+        }
+        .btn-auth {
+            width: 100%;
+            background-color: #e54d6d;
+            color: #ffffff;
+            border: none;
+            padding: 0.85rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(229, 77, 109, 0.3);
+            margin-top: 1rem;
+        }
+        .btn-auth:hover {
+            background-color: #b82346;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(229, 77, 109, 0.4);
+        }
+        .form-message {
+            background-color: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+            text-align: center;
+        }
+        .form-error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.8rem;
+            font-size: 0.9rem;
+            color: #78535e;
+        }
+        .auth-footer a {
+            color: #e54d6d;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+{% endblock meta %}
+
+{% block content %}
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1 class="auth-title">Welcome Back</h1>
+            <p class="auth-subtitle">Silakan login untuk mengelola portofolio & memberi star</p>
+
+            {% for message in messages %}
+                <p class="form-message">{{ message }}</p>
+            {% endfor %}
+
+            <form method="POST" action="{% url 'main:login' %}">
+                {% csrf_token %}
+
+                {% for error in form.non_field_errors %}
+                    <p class="form-error">{{ error }}</p>
+                {% endfor %}
+
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <p class="form-error">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn-auth">Login</button>
+            </form>
+
+            <p class="auth-footer">
+                Belum punya akun? <a href="{% url 'main:register' %}">Daftar sekarang</a>
+            </p>
+        </div>
+    </div>
+{% endblock content %}

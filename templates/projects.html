@@ -134,6 +134,11 @@
             object-fit: cover;
             display: block;
         }
+        .badge-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         .badge-pill {
             display: inline-block;
             font-size: 0.75rem;
@@ -145,6 +150,44 @@
             border-radius: 9999px;
             box-shadow: 0 2px 6px rgba(229, 77, 109, 0.25);
             width: fit-content;
+        }
+        /* tombol star */
+        .btn-star {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1.5px solid #f4d3db;
+            background-color: #ffffff;
+            color: #78535e;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .btn-star:hover {
+            border-color: #e54d6d;
+            color: #e54d6d;
+            background-color: #fff8f9;
+        }
+        .btn-star.starred {
+            background-color: #fdf0f3;
+            border-color: #e54d6d;
+            color: #b82346;
+        }
+        .star-count {
+            background-color: #f4d3db;
+            color: #2b181e;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .btn-star.starred .star-count {
+            background-color: #e54d6d;
+            color: #ffffff;
         }
         .card-title {
             font-family: 'Playfair Display', Georgia, serif;
@@ -203,12 +246,14 @@
         <div class="container">
             <p class="section-kicker">FEATURED WORKS</p>
             
-            <!-- baris header: judul di kiri, tombol + Add Project di kanan -->
+            <!-- baris header: judul di kiri, tombol + Add Project di kanan (hanya superuser/pemilik) -->
             <div class="section-header-top">
                 <h1 class="projects-title">Projects</h1>
-                <a href="{% url 'main:create_project' %}" class="btn-add-project">
-                    + Add Project
-                </a>
+                {% if user.is_superuser %}
+                    <a href="{% url 'main:create_project' %}" class="btn-add-project">
+                        + Add Project
+                    </a>
+                {% endif %}
             </div>
 
             <!-- form pencarian proyek -->
@@ -239,6 +284,21 @@
 
                         <div class="badge-wrapper">
                             <span class="badge-pill">{{ project.category }}</span>
+                            
+                            <!-- Tombol Star -->
+                            {% if user.is_authenticated %}
+                                <form method="POST" action="{% url 'main:toggle_star' project.id %}" style="display: inline; margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-star {% if user in project.starred_by.all %}starred{% endif %}">
+                                        {% if user in project.starred_by.all %}★ Starred{% else %}☆ Star{% endif %}
+                                        <span class="star-count">{{ project.starred_by.count }}</span>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <a href="{% url 'main:login' %}" class="btn-star" title="Login untuk memberi star">
+                                    ☆ Star <span class="star-count">{{ project.starred_by.count }}</span>
+                                </a>
+                            {% endif %}
                         </div>
 
                         <h2 class="card-title">{{ project.title }}</h2>
@@ -253,15 +313,17 @@
                             {{ project.description|linebreaksbr }}
                         </p>
 
-                        <!-- tombol aksi edit dan hapus -->
-                        <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #fce8ec;">
-                            <a href="{% url 'main:edit_project' project.id %}" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fdf0f3; color: #b82346; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #f4d3db;">
-                                Edit
-                            </a>
-                            <a href="{% url 'main:delete_project' project.id %}" onclick="return confirm('Apakah kamu yakin ingin menghapus proyek ini?');" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #ffc9c9;">
-                                 Delete
-                            </a>
-                        </div>
+                        <!-- tombol aksi edit dan hapus (hanya superuser/pemilik) -->
+                        {% if user.is_superuser %}
+                            <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #fce8ec;">
+                                <a href="{% url 'main:edit_project' project.id %}" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fdf0f3; color: #b82346; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #f4d3db;">
+                                    Edit
+                                </a>
+                                <a href="{% url 'main:delete_project' project.id %}" onclick="return confirm('Apakah kamu yakin ingin menghapus proyek ini?');" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #ffc9c9;">
+                                    Delete
+                                </a>
+                            </div>
+                        {% endif %}
                     </article>
                 {% empty %}
                     <p class="empty-state">

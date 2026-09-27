@@ -9,6 +9,10 @@ from main.views import (
     delete_project,
     edit_experience,
     delete_experience,
+    toggle_star,
+    register,
+    login_user,
+    logout_user,
     show_xml,
     show_json,
     show_xml_by_id,
@@ -27,15 +31,21 @@ urlpatterns = [
     path('experience/', show_experience, name='show_experience'),
     path('projects/', show_projects, name='show_projects'),
     
+    # Autentikasi
+    path('register/', register, name='register'),
+    path('login/', login_user, name='login'),
+    path('logout/', logout_user, name='logout'),
+
     # Form Experience
     path('create-experience/', create_experience, name='create_experience'),
     path('edit-experience/<str:id>/', edit_experience, name='edit_experience'),
     path('delete-experience/<str:id>/', delete_experience, name='delete_experience'),
 
-    # Form Project
+    # Form Project & Star
     path('create-project/', create_project, name='create_project'),
     path('edit-project/<str:id>/', edit_project, name='edit_project'),
     path('delete-project/<str:id>/', delete_project, name='delete_project'),
+    path('projects/star/<str:id>/', toggle_star, name='toggle_star'),
 
     # Data Delivery (XML & JSON)
     path('xml/', show_xml, name='show_xml'),

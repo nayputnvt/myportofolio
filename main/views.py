@@ -1,12 +1,58 @@
-from django.shortcuts import render, redirect
+import datetime
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.core import serializers
 from django.db.models import Q 
+from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from main.models import Experience, Project
 from main.forms import ExperienceForm, ProjectForm
 
+# Halaman registrasi akun
+def register(request):
+    form = UserCreationForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Akun berhasil dibuat. Silakan login.")
+        return redirect("main:login")
+
+    context = {
+        "name": "Nayla",
+        "form": form,
+    }
+    return render(request, "register.html", context)
+
+# Halaman login & simpan cookie last_login
+def login_user(request):
+    form = AuthenticationForm(request, data=request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        user = form.get_user()
+        login(request, user)
+        response = redirect("main:show_main")
+        response.set_cookie("last_login", str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        return response
+
+    context = {
+        "name": "Nayla",
+        "form": form,
+    }
+    return render(request, "login.html", context)
+
+# Halaman logout & hapus cookie last_login
+def logout_user(request):
+    logout(request)
+    response = redirect("main:show_main")
+    response.delete_cookie("last_login")
+    return response
+
 # Halaman profil / home
 def show_main(request):
+    last_login = request.COOKIES.get("last_login", "Belum ada sesi login / Cookie tidak ditemukan")
     context = {
         "name": "Nayla",
         "npm": "2506657182",
@@ -15,6 +61,7 @@ def show_main(request):
             "Information Systems student at Universitas Indonesia passionate "
             "about web development, technology solutions, and building impactful digital products."
         ),
+        "last_login": last_login,
     }
     return render(request, "index.html", context)
 
@@ -46,7 +93,11 @@ def show_projects(request):
     return render(request, "projects.html", context)
 
 # Form tambah pengalaman baru
+@login_required(login_url="/login/")
 def create_experience(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     form = ExperienceForm(request.POST or None)
 
     if form.is_valid() and request.method == "POST":
@@ -60,7 +111,11 @@ def create_experience(request):
     return render(request, "create_experience.html", context)
 
 # Form tambah proyek baru
+@login_required(login_url="/login/")
 def create_project(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     form = ProjectForm(request.POST or None)
 
     if form.is_valid() and request.method == "POST":
@@ -74,8 +129,12 @@ def create_project(request):
     return render(request, "create_project.html", context)
 
 # Fungsi untuk mengedit proyek yang sudah ada
+@login_required(login_url="/login/")
 def edit_project(request, id):
-    project = Project.objects.get(pk=id)
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    project = get_object_or_404(Project, pk=id)
     form = ProjectForm(request.POST or None, instance=project)
 
     if form.is_valid() and request.method == "POST":
@@ -90,14 +149,35 @@ def edit_project(request, id):
     return render(request, "edit_project.html", context)
 
 # Fungsi untuk menghapus proyek
+@login_required(login_url="/login/")
 def delete_project(request, id):
-    project = Project.objects.get(pk=id)
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    project = get_object_or_404(Project, pk=id)
     project.delete()
     return redirect('main:show_projects')
 
+# Fungsi untuk memberi atau membatalkan star pada proyek
+@login_required(login_url="/login/")
+def toggle_star(request, id):
+    project = get_object_or_404(Project, pk=id)
+
+    if request.method == "POST":
+        if request.user in project.starred_by.all():
+            project.starred_by.remove(request.user)
+        else:
+            project.starred_by.add(request.user)
+
+    return redirect('main:show_projects')
+
 # Fungsi untuk mengedit pengalaman
+@login_required(login_url="/login/")
 def edit_experience(request, id):
-    experience = Experience.objects.get(pk=id)
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    experience = get_object_or_404(Experience, pk=id)
     form = ExperienceForm(request.POST or None, instance=experience)
 
     if form.is_valid() and request.method == "POST":
@@ -112,8 +192,12 @@ def edit_experience(request, id):
     return render(request, "edit_experience.html", context)
 
 # Fungsi untuk menghapus pengalaman
+@login_required(login_url="/login/")
 def delete_experience(request, id):
-    experience = Experience.objects.get(pk=id)
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    experience = get_object_or_404(Experience, pk=id)
     experience.delete()
     return redirect('main:show_experience')
 
@@ -145,7 +229,7 @@ def show_project_xml(request):
 # Mengembalikan seluruh data proyek dalam format JSON
 def show_project_json(request):
     data = Project.objects.all()
-    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+    return HttpResponse(serializers.serialize("json", data, use_natural_foreign_keys=True), content_type="application/json")
 
 # Mengembalikan 1 data proyek berdasarkan ID dalam format XML
 def show_project_xml_by_id(request, id):
@@ -155,4 +239,4 @@ def show_project_xml_by_id(request, id):
 # Mengembalikan 1 data proyek berdasarkan ID dalam format JSON
 def show_project_json_by_id(request, id):
     data = Project.objects.filter(pk=id)
-    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+    return HttpResponse(serializers.serialize("json", data, use_natural_foreign_keys=True), content_type="application/json")
