@@ -83,3 +83,31 @@ Diskusi difokuskan pada pemahaman cara kerja `ModelForm` dan validasinya, mekani
 Seluruh penulisan kode (model, form, views, URL, template), perbaikan logika, hingga verifikasi 23 skenario unit test tetap saya pelajari, kerjakan, dan uji secara mandiri pada proyek `myportofolio`.
 
 * **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi PBP di Google Gemini](https://gemini.google.com/share/d/1x9N04SH-viI2-Nxy0Yd7ljqCvqXOKy95?usp=sharing)
+
+
+### Tugas 4
+
+*(Catatan: Mengikuti panduan resmi pada spesifikasi Tugas 4, pertanyaan reflektif untuk pekan ini ditiadakan/dihilangkan).*
+
+1. **Implementasi Autentikasi, Sesi, dan Cookie:**
+   - Saya mengimplementasikan alur autentikasi bawaan Django melalui fungsi `register`, `login_user`, dan `logout_user`.
+   - Saat pengguna berhasil login, view memasang cookie `last_login` yang menyimpan informasi tanggal dan jam login. Data ini ditampilkan di halaman profil utama (`index.html`). Saat pengguna melakukan logout, sesi login dihapus dan cookie `last_login` langsung dibersihkan dari browser.
+
+2. **Penerapan Hak Akses & 4 Peran Pengguna (Authorization):**
+   - **Guest (Belum Login):** Pengunjung hanya bisa membaca daftar pengalaman dan proyek. Jika mencoba melakukan penambahan, pengubahan, penghapusan, atau pemberian star, pengunjung akan otomatis dialihkan ke halaman login.
+   - **Regular User (Pengguna Biasa):** Pengguna yang sudah login dapat membaca data serta memberikan atau membatalkan *star* (`toggle_star`). Pengguna biasa tidak memiliki akses untuk membuat, mengedit, atau menghapus data (diberikan respon `403 PermissionDenied` jika mencoba mengaksesnya).
+   - **Editor:** Saya membuat grup `Editor` melalui Django Admin. Pengguna yang tergabung dalam grup ini memiliki hak akses pengguna biasa ditambah izin untuk **mengubah/mengedit data** (`edit_project` dan `edit_experience`). Namun, Editor tetap tidak diizinkan membuat data baru atau menghapus data.
+   - **Superuser (Pemilik Portofolio):** Memiliki hak akses penuh untuk membuat, mengedit, menghapus, serta memberikan star pada seluruh data portofolio.
+   - Di sisi template (`projects.html` dan `experience.html`), tombol aksi (`Add`, `Edit`, `Delete`) ditampilkan dan disembunyikan secara kondisional menggunakan tag template Django sesuai dengan peran pengguna yang sedang aktif.
+
+3. **Fitur Star pada Experience dan Project:**
+   - Saya menambahkan relasi `starred_by = models.ManyToManyField(User, ...)` pada model `Experience` dan `Project`.
+   - Fitur pemberian star ditangani oleh view `toggle_experience_star` dan `toggle_star` menggunakan method `POST` dan dilindungi dengan `{% csrf_token %}` untuk keamanan dari serangan CSRF.
+   - Endpoint JSON juga disesuaikan dengan menambahkan parameter `use_natural_foreign_keys=True` pada serializer agar data relasi many-to-many dapat ditampilkan secara aman dan terstruktur.
+
+**Penggunaan AI:**
+Dalam menyelesaikan Tugas 4 ini, saya memanfaatkan AI Assistant (Google Gemini) secara transparan sebagai rekan diskusi (*learning companion*) untuk memperdalam konsep autentikasi, pengelolaan sesi, mekanisme otorisasi berbasis grup di Django, serta perancangan skenario unit test.
+
+Diskusi difokuskan pada pemahaman perbedaan session dan cookie, cara kerja `PermissionDenied` untuk menghasilkan respon HTTP 403, penanganan relasi `ManyToManyField` pada serialisasi JSON, dan pembuatan skenario pengujian 4 peran di `tests.py`. Seluruh penulisan kode, penyesuaian logika peran, perapian antarmuka, hingga verifikasi pengujian 33 unit test saya pelajari, terapkan, dan uji secara mandiri pada proyek `myportofolio`.
+
+* **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi Konsep Tugas 4 di Google Gemini](https://share.gemini.google/LUSLFKc9J4IY)

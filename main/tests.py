@@ -1,14 +1,14 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 
 from main.models import Experience, Project
 
 
 class MainTest(TestCase):
     def setUp(self):
-        # dummy user admin (superuser) & user biasa
+        # dummy user superuser, user biasa, dan editor
         self.admin_user = User.objects.create_superuser(
             username="nayla_admin",
             password="adminpassword123",
@@ -17,6 +17,12 @@ class MainTest(TestCase):
             username="sasha_guest",
             password="userpassword123",
         )
+        self.editor_group = Group.objects.create(name="Editor")
+        self.editor_user = User.objects.create_user(
+            username="budi_editor",
+            password="editorpassword123",
+        )
+        self.editor_user.groups.add(self.editor_group)
 
         # dummy data buat testing
         self.experience = Experience.objects.create(
@@ -184,7 +190,7 @@ class MainTest(TestCase):
         self.assertEqual(response.status_code, 302)  # redirect ke project list
         self.assertTrue(Project.objects.filter(title="AI Task Manager").exists())
 
-    # test edit project (GET & POST)
+    # test edit project (GET & POST) oleh Superuser
     def test_edit_project(self):
         self.client.login(username="nayla_admin", password="adminpassword123")
         # test akses halaman edit
@@ -205,12 +211,35 @@ class MainTest(TestCase):
         self.project.refresh_from_db()
         self.assertEqual(self.project.title, "Updated Portfolio Project")
 
-    # test delete project
+    # test delete project oleh Superuser
     def test_delete_project(self):
         self.client.login(username="nayla_admin", password="adminpassword123")
         response = self.client.get(reverse("main:delete_project", args=[str(self.project.id)]))
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Project.objects.filter(id=self.project.id).exists())
+
+    # test edit experience oleh Superuser
+    def test_edit_experience(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
+        response = self.client.get(reverse("main:edit_experience", args=[str(self.experience.id)]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "edit_experience.html")
+
+        response_post = self.client.post(reverse("main:edit_experience", args=[str(self.experience.id)]), {
+            "title": "Senior Software Engineer Intern",
+            "description": "Membantu pengembangan arsitektur web aplikasi.",
+            "category": "full-time",
+        })
+        self.assertEqual(response_post.status_code, 302)
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "Senior Software Engineer Intern")
+
+    # test delete experience oleh Superuser
+    def test_delete_experience(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
+        response = self.client.get(reverse("main:delete_experience", args=[str(self.experience.id)]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Experience.objects.filter(id=self.experience.id).exists())
 
     # test delivery seluruh data project format XML
     def test_show_project_xml_status_and_content_type(self):
@@ -259,19 +288,59 @@ class MainTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.cookies["last_login"].value, "")
 
-    # test otorisasi: pengguna belum login diarahkan ke login saat buat proyek
-    def test_create_project_unauthenticated_redirects_to_login(self):
-        response = self.client.get(reverse("main:create_project"))
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse("main:login"), response.url)
+    # test otorisasi: pengguna belum login diarahkan ke login saat buat data
+    def test_unauthenticated_redirects_to_login(self):
+        # test create project
+        response_project = self.client.get(reverse("main:create_project"))
+        self.assertEqual(response_project.status_code, 302)
+        self.assertIn(reverse("main:login"), response_project.url)
 
-    # test otorisasi: pengguna biasa (non-superuser) ditolak 403 saat buat proyek
-    def test_create_project_non_superuser_forbidden(self):
+        # test create experience
+        response_exp = self.client.get(reverse("main:create_experience"))
+        self.assertEqual(response_exp.status_code, 302)
+        self.assertIn(reverse("main:login"), response_exp.url)
+
+    # test otorisasi: pengguna biasa (non-superuser) ditolak 403 saat buat data
+    def test_regular_user_cannot_create_or_delete(self):
         self.client.login(username="sasha_guest", password="userpassword123")
-        response = self.client.get(reverse("main:create_project"))
-        self.assertEqual(response.status_code, 403)
+        # tidak bisa create
+        self.assertEqual(self.client.get(reverse("main:create_project")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("main:create_experience")).status_code, 403)
+        # tidak bisa edit
+        self.assertEqual(self.client.get(reverse("main:edit_project", args=[str(self.project.id)])).status_code, 403)
+        self.assertEqual(self.client.get(reverse("main:edit_experience", args=[str(self.experience.id)])).status_code, 403)
+        # tidak bisa delete
+        self.assertEqual(self.client.get(reverse("main:delete_project", args=[str(self.project.id)])).status_code, 403)
+        self.assertEqual(self.client.get(reverse("main:delete_experience", args=[str(self.experience.id)])).status_code, 403)
 
-    # test fitur toggle star
+    # test otorisasi: Editor diizinkan edit, tetapi dilarang create dan delete (403)
+    def test_editor_role_permissions(self):
+        self.client.login(username="budi_editor", password="editorpassword123")
+
+        # Editor BISA mengakses halaman edit
+        self.assertEqual(self.client.get(reverse("main:edit_project", args=[str(self.project.id)])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("main:edit_experience", args=[str(self.experience.id)])).status_code, 200)
+
+        # Editor BISA update data lewat form edit
+        res_edit_proj = self.client.post(reverse("main:edit_project", args=[str(self.project.id)]), {
+            "title": "Edited by Editor",
+            "description": "Description edited by editor.",
+            "category": "Web Development",
+            "tech_stack": "Python, Django",
+        })
+        self.assertEqual(res_edit_proj.status_code, 302)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Edited by Editor")
+
+        # Editor TIDAK BISA create (403)
+        self.assertEqual(self.client.get(reverse("main:create_project")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("main:create_experience")).status_code, 403)
+
+        # Editor TIDAK BISA delete (403)
+        self.assertEqual(self.client.get(reverse("main:delete_project", args=[str(self.project.id)])).status_code, 403)
+        self.assertEqual(self.client.get(reverse("main:delete_experience", args=[str(self.experience.id)])).status_code, 403)
+
+    # test fitur toggle star pada project
     def test_toggle_star_project(self):
         self.client.login(username="sasha_guest", password="userpassword123")
 
@@ -284,3 +353,17 @@ class MainTest(TestCase):
         response_unstar = self.client.post(reverse("main:toggle_star", args=[str(self.project.id)]))
         self.assertEqual(response_unstar.status_code, 302)
         self.assertFalse(self.project.starred_by.filter(username="sasha_guest").exists())
+
+    # test fitur toggle star pada experience
+    def test_toggle_star_experience(self):
+        self.client.login(username="sasha_guest", password="userpassword123")
+
+        # beri star pada experience
+        response = self.client.post(reverse("main:toggle_experience_star", args=[str(self.experience.id)]))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(self.experience.starred_by.filter(username="sasha_guest").exists())
+
+        # batalkan star pada experience
+        response_unstar = self.client.post(reverse("main:toggle_experience_star", args=[str(self.experience.id)]))
+        self.assertEqual(response_unstar.status_code, 302)
+        self.assertFalse(self.experience.starred_by.filter(username="sasha_guest").exists())
