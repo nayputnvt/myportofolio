@@ -313,15 +313,17 @@
                             {{ project.description|linebreaksbr }}
                         </p>
 
-                        <!-- tombol aksi edit dan hapus (hanya superuser/pemilik) -->
-                        {% if user.is_superuser %}
+                        <!-- tombol aksi edit (superuser & editor) dan delete (superuser only) -->
+                        {% if user.is_superuser or is_editor %}
                             <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #fce8ec;">
                                 <a href="{% url 'main:edit_project' project.id %}" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fdf0f3; color: #b82346; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #f4d3db;">
                                     Edit
                                 </a>
-                                <a href="{% url 'main:delete_project' project.id %}" onclick="return confirm('Apakah kamu yakin ingin menghapus proyek ini?');" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #ffc9c9;">
-                                    Delete
-                                </a>
+                                {% if user.is_superuser %}
+                                    <a href="{% url 'main:delete_project' project.id %}" onclick="return confirm('Apakah kamu yakin ingin menghapus proyek ini?');" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #ffc9c9;">
+                                        Delete
+                                    </a>
+                                {% endif %}
                             </div>
                         {% endif %}
                     </article>

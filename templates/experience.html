@@ -122,12 +122,14 @@
             <p class="section-kicker">Background</p>
             <h1 class="experience-title">Experience</h1>
 
-            <!-- tombol navigasi tambah pengalaman baru -->
-            <div>
-                <a href="{% url 'main:create_experience' %}" class="btn-add-experience">
-                    + Add Experience
-                </a>
-            </div>
+            <!-- tombol navigasi tambah pengalaman baru (hanya superuser/pemilik) -->
+            {% if user.is_superuser %}
+                <div>
+                    <a href="{% url 'main:create_experience' %}" class="btn-add-experience">
+                        + Add Experience
+                    </a>
+                </div>
+            {% endif %}
 
             <!-- grid daftar kartu pengalaman -->
             <div class="experience-grid">
@@ -140,9 +142,25 @@
                             </div>
                         {% endif %}
 
-                        <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span class="badge-pill">{{ experience.get_category_display }}</span>
+
+                            <!-- Tombol Star Pengalaman -->
+                            {% if user.is_authenticated %}
+                                <form method="POST" action="{% url 'main:toggle_experience_star' experience.id %}" style="display: inline; margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-star {% if user in experience.starred_by.all %}starred{% endif %}" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; border: 1.5px solid #f4d3db; background-color: {% if user in experience.starred_by.all %}#fdf0f3{% else %}#ffffff{% endif %}; color: {% if user in experience.starred_by.all %}#b82346{% else %}#78535e{% endif %}; cursor: pointer; text-decoration: none;">
+                                        {% if user in experience.starred_by.all %}★ Starred{% else %}☆ Star{% endif %}
+                                        <span class="star-count" style="background-color: {% if user in experience.starred_by.all %}#e54d6d{% else %}#f4d3db{% endif %}; color: {% if user in experience.starred_by.all %}#ffffff{% else %}#2b181e{% endif %}; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700;">{{ experience.starred_by.count }}</span>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <a href="{% url 'main:login' %}" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; border: 1.5px solid #f4d3db; background-color: #ffffff; color: #78535e; text-decoration: none;" title="Login untuk memberi star">
+                                    ☆ Star <span style="background-color: #f4d3db; color: #2b181e; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700;">{{ experience.starred_by.count }}</span>
+                                </a>
+                            {% endif %}
                         </div>
+
                         <h2 class="card-title">{{ experience.title }}</h2>
                         <p class="experience-description">
                             {{ experience.description }}
@@ -154,15 +172,19 @@
                             <p class="experience-status">Selesai</p>
                         {% endif %}
 
-                        <!-- tombol aksi edit dan delete -->
-                        <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #fce8ec;">
-                            <a href="{% url 'main:edit_experience' experience.id %}" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fdf0f3; color: #b82346; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #f4d3db;">
-                                Edit
-                            </a>
-                            <a href="{% url 'main:delete_experience' experience.id %}" onclick="return confirm('Are you sure you want to delete this experience?');" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #ffc9c9;">
-                                Delete
-                            </a>
-                        </div>
+                        <!-- tombol aksi edit (superuser & editor) dan delete (superuser only) -->
+                        {% if user.is_superuser or is_editor %}
+                            <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #fce8ec;">
+                                <a href="{% url 'main:edit_experience' experience.id %}" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fdf0f3; color: #b82346; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #f4d3db;">
+                                    Edit
+                                </a>
+                                {% if user.is_superuser %}
+                                    <a href="{% url 'main:delete_experience' experience.id %}" onclick="return confirm('Apakah kamu yakin ingin menghapus pengalaman ini?');" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #ffc9c9;">
+                                        Delete
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     </article>
                 {% empty %}
                     <p class="empty-state">
