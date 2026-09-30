@@ -590,3 +590,151 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
 .toast-success { border-left: 5px solid #22c55e; }
 .toast-error { border-left: 5px solid #e54d6d; }
 .toast-normal { border-left: 5px solid var(--accent); }
+
+/* ================================
+   10. Modal Popover Component
+================================ */
+.modal-popover {
+    margin: auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    max-width: 580px;
+    width: 90%;
+    overflow: visible;
+}
+
+.modal-popover::backdrop {
+    background-color: rgba(43, 24, 30, 0.45);
+    backdrop-filter: blur(4px);
+    transition: opacity 0.25s ease;
+}
+
+.modal-dialog {
+    background-color: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 20px;
+    padding: 2.2rem;
+    box-shadow: 0 20px 40px rgba(43, 24, 30, 0.2);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 1rem;
+}
+
+.modal-title {
+    font-size: 1.6rem;
+    color: var(--ink);
+    margin: 0;
+}
+
+.btn-close-modal {
+    background: transparent;
+    border: none;
+    font-size: 1.75rem;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-close-modal:hover {
+    color: var(--accent);
+    background-color: #fdeef2;
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-group label {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.form-input, .form-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--ink);
+    background-color: #ffffff;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input:focus, .form-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(229, 77, 109, 0.15);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+}
+
+.btn-cancel {
+    padding: 0.7rem 1.4rem;
+    border-radius: 9999px;
+    border: 1.5px solid var(--line);
+    background-color: #ffffff;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+    background-color: #fdf0f3;
+    color: var(--accent-dark);
+}
+
+.btn-submit {
+    padding: 0.7rem 1.6rem;
+    border-radius: 9999px;
+    border: none;
+    background-color: var(--accent);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(229, 77, 109, 0.3);
+}
+
+.btn-submit:hover {
+    background-color: var(--accent-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(229, 77, 109, 0.4);
+}

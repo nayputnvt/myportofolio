@@ -5,6 +5,7 @@ from main.views import (
     show_projects, 
     create_experience,
     create_project,
+    create_project_ajax,
     edit_project,
     delete_project,
     edit_experience,
@@ -46,6 +47,8 @@ urlpatterns = [
 
     # Form Project & Star
     path('create-project/', create_project, name='create_project'),
+    path('create-project-ajax/', create_project_ajax, name='create_project_ajax'),
+    path('projects/add-ajax/', create_project_ajax, name='create_project_ajax_alt'),
     path('edit-project/<str:id>/', edit_project, name='edit_project'),
     path('delete-project/<str:id>/', delete_project, name='delete_project'),
     path('projects/star/<str:id>/', toggle_star, name='toggle_star'),

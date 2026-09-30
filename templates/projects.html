@@ -250,9 +250,9 @@
             <div class="section-header-top">
                 <h1 class="projects-title">Projects</h1>
                 {% if user.is_superuser %}
-                    <a href="{% url 'main:create_project' %}" class="btn-add-project" id="btn-open-add-modal">
+                    <button type="button" class="btn-add-project" id="btn-open-add-modal" style="cursor: pointer; border: none;">
                         + Add Project
-                    </a>
+                    </button>
                 {% endif %}
             </div>
 
@@ -291,7 +291,50 @@
         </div>
     </section>
 
-    <!-- Script AJAX Fetch API & Live Search -->
+    <!-- Modal Popover Tambah Proyek Baru (Khusus Superuser) -->
+    {% if user.is_superuser %}
+    <div id="add-project-modal" class="modal-popover" popover="manual">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 class="modal-title">Tambah Proyek Baru</h2>
+                <button type="button" class="btn-close-modal" id="btn-close-add-modal" aria-label="Tutup">&times;</button>
+            </div>
+            <form id="add-project-form" class="modal-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_title">Judul Proyek *</label>
+                    <input type="text" name="title" id="id_title" required class="form-input" placeholder="e.g. Personal Portfolio">
+                </div>
+                <div class="form-group">
+                    <label for="id_category">Kategori *</label>
+                    <input type="text" name="category" id="id_category" required class="form-input" placeholder="e.g. Web Development" value="Web Development">
+                </div>
+                <div class="form-group">
+                    <label for="id_tech_stack">Tech Stack</label>
+                    <input type="text" name="tech_stack" id="id_tech_stack" class="form-input" placeholder="e.g. HTML5, CSS3, JavaScript, Django">
+                </div>
+                <div class="form-group">
+                    <label for="id_project_url">URL Proyek / Repositori</label>
+                    <input type="url" name="project_url" id="id_project_url" class="form-input" placeholder="https://github.com/...">
+                </div>
+                <div class="form-group">
+                    <label for="id_thumbnail">URL Thumbnail Foto</label>
+                    <input type="url" name="thumbnail" id="id_thumbnail" class="form-input" placeholder="https://images.unsplash.com/...">
+                </div>
+                <div class="form-group">
+                    <label for="id_description">Deskripsi *</label>
+                    <textarea name="description" id="id_description" required class="form-textarea" rows="4" placeholder="Jelaskan mengenai proyek ini..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="btn-cancel-add-modal">Batal</button>
+                    <button type="submit" class="btn-submit" id="btn-submit-project">Simpan Proyek</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Script AJAX Fetch API, Live Search, & Modal Form -->
     <script>
         const CURRENT_USER = "{{ user.username|default:'' }}";
         const IS_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
@@ -299,6 +342,7 @@
         const IS_EDITOR = {{ is_editor|yesno:"true,false" }};
         const CSRF_TOKEN = "{{ csrf_token }}";
         const PROJECTS_API_URL = "{% url 'main:get_projects_json' %}";
+        const CREATE_PROJECT_AJAX_URL = "{% url 'main:create_project_ajax' %}";
         const STAR_BASE_URL = "{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000/', '');
         const LOGIN_URL = "{% url 'main:login' %}";
 
@@ -309,6 +353,13 @@
         const emptyState = document.getElementById('empty-state');
         const emptyStateMessage = document.getElementById('empty-state-message');
         const projectsGrid = document.getElementById('projects-grid');
+
+        // Elemen Modal Tambah Proyek
+        const addProjectModal = document.getElementById('add-project-modal');
+        const btnOpenAddModal = document.getElementById('btn-open-add-modal');
+        const btnCloseAddModal = document.getElementById('btn-close-add-modal');
+        const btnCancelAddModal = document.getElementById('btn-cancel-add-modal');
+        const addProjectForm = document.getElementById('add-project-form');
 
         let searchDebounceTimer = null;
         let currentAbortController = null;
@@ -330,6 +381,70 @@
             errorState.classList.toggle('hide', !showError);
             emptyState.classList.toggle('hide', !showEmpty);
             projectsGrid.classList.toggle('hide', !showGrid);
+        }
+
+        // Buka / Tutup Modal Popover
+        function openModal() {
+            if (addProjectModal) {
+                addProjectModal.showPopover();
+            }
+        }
+
+        function closeModal() {
+            if (addProjectModal && addProjectModal.matches(':popover-open')) {
+                addProjectModal.hidePopover();
+            }
+            if (addProjectForm) {
+                addProjectForm.reset();
+            }
+        }
+
+        if (btnOpenAddModal) btnOpenAddModal.addEventListener('click', openModal);
+        if (btnCloseAddModal) btnCloseAddModal.addEventListener('click', closeModal);
+        if (btnCancelAddModal) btnCancelAddModal.addEventListener('click', closeModal);
+
+        // Submit form tambah proyek via AJAX POST
+        if (addProjectForm) {
+            addProjectForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const submitBtn = document.getElementById('btn-submit-project');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Menyimpan...';
+                }
+
+                const formData = new FormData(addProjectForm);
+
+                try {
+                    const response = await fetch(CREATE_PROJECT_AJAX_URL, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': CSRF_TOKEN,
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.status === 'success') {
+                        closeModal();
+                        showToast("Berhasil!", "Proyek baru berhasil ditambahkan.", "success");
+                        // Refresh daftar proyek secara asinkronus
+                        fetchProjects(searchInput.value.trim());
+                    } else {
+                        const errorMsg = result.message || "Gagal menambahkan proyek. Silakan periksa isian kamu.";
+                        showToast("Gagal!", errorMsg, "error");
+                    }
+                } catch (error) {
+                    console.error('Error submitting project:', error);
+                    showToast("Error!", "Terjadi kesalahan jaringan saat menyimpan data.", "error");
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Simpan Proyek';
+                    }
+                }
+            });
         }
 
         // Membuat elemen kartu proyek

@@ -388,3 +388,65 @@ class MainTest(TestCase):
         response_unstar = self.client.post(reverse("main:toggle_experience_star", args=[str(self.experience.id)]))
         self.assertEqual(response_unstar.status_code, 302)
         self.assertFalse(self.experience.starred_by.filter(username="sasha_guest").exists())
+
+    # test tambah proyek via AJAX POST oleh Superuser
+    def test_create_project_ajax_success(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
+        response = self.client.post(reverse("main:create_project_ajax"), {
+            "title": "Machine Learning Dashboard",
+            "description": "Interactive analytics dashboard with Scikit-learn.",
+            "category": "Data Science",
+            "tech_stack": "Python, Django, Pandas",
+            "project_url": "https://github.com/nayputnvt/ml-dashboard",
+            "thumbnail": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800",
+        })
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertTrue(Project.objects.filter(title="Machine Learning Dashboard").exists())
+
+    # test otorisasi create_project_ajax untuk user non-superuser
+    def test_create_project_ajax_permission_denied(self):
+        # user belum login
+        response_unauth = self.client.post(reverse("main:create_project_ajax"), {
+            "title": "Unauthorized Project",
+            "description": "Should fail",
+        })
+        self.assertEqual(response_unauth.status_code, 302)
+
+        # user biasa (bukan superuser)
+        self.client.login(username="sasha_guest", password="userpassword123")
+        response_user = self.client.post(reverse("main:create_project_ajax"), {
+            "title": "Unauthorized Project",
+            "description": "Should fail",
+        })
+        self.assertEqual(response_user.status_code, 403)
+
+        # editor (bukan superuser)
+        self.client.login(username="budi_editor", password="editorpassword123")
+        response_editor = self.client.post(reverse("main:create_project_ajax"), {
+            "title": "Unauthorized Project",
+            "description": "Should fail",
+        })
+        self.assertEqual(response_editor.status_code, 403)
+
+    # test sanitasi XSS (strip_tags) pada form input proyek
+    def test_project_form_strip_tags_xss(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
+        xss_payload = "<script>alert('xss_attack');</script>Aplikasi Aman"
+        
+        response = self.client.post(reverse("main:create_project_ajax"), {
+            "title": xss_payload,
+            "description": "<p>Deskripsi <b>bold</b> <script>alert('xss');</script></p>",
+            "category": "Web Development",
+            "tech_stack": "HTML, <script>malicious()</script>CSS",
+        })
+
+        self.assertEqual(response.status_code, 201)
+        created_project = Project.objects.get(title__contains="Aplikasi Aman")
+        self.assertNotIn("<script>", created_project.title)
+        self.assertNotIn("</script>", created_project.title)
+        self.assertNotIn("<script>", created_project.description)
+        self.assertNotIn("<p>", created_project.description)
+        self.assertNotIn("<script>", created_project.tech_stack)

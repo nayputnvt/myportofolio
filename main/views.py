@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.core.exceptions import PermissionDenied
 from main.models import Experience, Project
 from main.forms import ExperienceForm, ProjectForm
@@ -106,7 +107,7 @@ def create_experience(request):
     }
     return render(request, "create_experience.html", context)
 
-# Form tambah proyek baru
+# Form tambah proyek baru (halaman standar)
 @login_required(login_url="/login/")
 def create_project(request):
     # Hanya Superuser (pemilik portofolio) yang boleh membuat proyek baru
@@ -124,6 +125,39 @@ def create_project(request):
         "form": form,
     }
     return render(request, "create_project.html", context)
+
+# Tambah proyek baru via AJAX POST
+@login_required(login_url="/login/")
+@require_POST
+def create_project_ajax(request):
+    # Hanya Superuser (pemilik portofolio) yang diizinkan menambah data via AJAX
+    if not request.user.is_superuser:
+        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+
+    form = ProjectForm(request.POST)
+    if form.is_valid():
+        project = form.save()
+        return JsonResponse({
+            "status": "success",
+            "message": "Proyek baru berhasil ditambahkan!",
+            "project": {
+                "pk": str(project.pk),
+                "title": project.title,
+                "category": project.category,
+                "description": project.description,
+                "tech_stack": project.tech_stack or "",
+                "thumbnail": project.thumbnail or "",
+                "project_url": project.project_url or "",
+                "star_count": project.starred_by.count(),
+                "is_starred": False,
+            }
+        }, status=201)
+
+    return JsonResponse({
+        "status": "error",
+        "message": "Data form tidak valid.",
+        "errors": form.errors
+    }, status=400)
 
 # Fungsi untuk mengedit proyek yang sudah ada
 @login_required(login_url="/login/")

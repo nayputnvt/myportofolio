@@ -110,4 +110,4 @@ Dalam menyelesaikan Tugas 4 ini, saya memanfaatkan AI Assistant (Google Gemini) 
 
 Diskusi difokuskan pada pemahaman perbedaan session dan cookie, cara kerja `PermissionDenied` untuk menghasilkan respon HTTP 403, penanganan relasi `ManyToManyField` pada serialisasi JSON, dan pembuatan skenario pengujian 4 peran di `tests.py`. Seluruh penulisan kode, penyesuaian logika peran, perapian antarmuka, hingga verifikasi pengujian 33 unit test saya pelajari, terapkan, dan uji secara mandiri pada proyek `myportofolio`.
 
-* **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi Konsep Tugas 4 di Google Gemini](https://share.gemini.google/LUSLFKc9J4IY)
+* **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi Konsep Tugas 4 di Google Gemini](https://share.gemini.google/BLbvmPPDAYfR)
