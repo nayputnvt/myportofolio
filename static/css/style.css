@@ -516,11 +516,77 @@ h1, h2, h3, .brand, .hero-identity h1, .section-heading h2, .experience-title, .
         padding: 0 0.5rem;
     }
 
-    .hero, .experience, .education, .skills {
-        padding: 3.5rem 0;
-    }
-
     .experience-item, .education-item, .skill-card {
         padding: 1.5rem;
     }
 }
+
+/* ================================
+   8. Utility & AJAX States
+================================ */
+.hide {
+    display: none !important;
+}
+
+.empty-state {
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 3rem 0;
+    text-align: center;
+    width: 100%;
+    grid-column: 1 / -1;
+}
+
+/* ================================
+   9. Toast Notification
+================================ */
+.toast-component {
+    position: fixed;
+    inset: auto 2rem 2rem auto;
+    margin: 0;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius);
+    box-shadow: 0 10px 25px rgba(43, 24, 30, 0.15);
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    background-color: var(--white);
+    border: 1.5px solid var(--line);
+    color: var(--ink);
+    z-index: 9999;
+}
+
+.toast-component:popover-open {
+    display: flex;
+}
+
+.toast-hidden {
+    opacity: 0;
+    transform: translateY(150%);
+    pointer-events: none;
+}
+
+.toast-show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--ink);
+}
+
+.toast-message {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Tipe notifikasi */
+.toast-success { border-left: 5px solid #22c55e; }
+.toast-error { border-left: 5px solid #e54d6d; }
+.toast-normal { border-left: 5px solid var(--accent); }

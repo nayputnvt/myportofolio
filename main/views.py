@@ -1,6 +1,6 @@
 import datetime
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.core import serializers
 from django.db.models import Q 
 from django.contrib import messages
@@ -76,25 +76,13 @@ def show_experience(request):
     }
     return render(request, "experience.html", context)
 
-# Halaman daftar proyek (dengan fitur pencarian)
+# Halaman daftar proyek (rendering kerangka untuk AJAX)
 def show_projects(request):
-    search_query = request.GET.get('q', '').strip()
-    if search_query:
-        # Filter berdasarkan nama proyek (title) atau tech_stack atau deskripsi
-        projects = Project.objects.filter(
-            Q(title__icontains=search_query) | 
-            Q(description__icontains=search_query) |
-            Q(tech_stack__icontains=search_query)
-        )
-    else:
-        projects = Project.objects.all()
-    
-    # Cek apakah pengguna memiliki hak akses Editor atau Superuser
+    title_query = request.GET.get('title', '').strip() or request.GET.get('q', '').strip()
     is_editor = request.user.is_authenticated and (request.user.is_superuser or request.user.groups.filter(name='Editor').exists())
     context = {
         "name": "Nayla",
-        "project_list": projects,
-        "search_query": search_query,
+        "title_query": title_query,
         "is_editor": is_editor,
     }
     return render(request, "projects.html", context)
@@ -252,10 +240,33 @@ def show_project_xml(request):
     data = Project.objects.all()
     return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
 
-# Mengembalikan seluruh data proyek dalam format JSON
-def show_project_json(request):
-    data = Project.objects.all()
-    return HttpResponse(serializers.serialize("json", data, use_natural_foreign_keys=True), content_type="application/json")
+# Mengembalikan data proyek dalam format JSON untuk AJAX dan pencarian dinamis
+def get_projects_json(request):
+    title_query = request.GET.get('title', '').strip() or request.GET.get('q', '').strip()
+    projects = Project.objects.all()
+
+    if title_query:
+        projects = projects.filter(title__icontains=title_query)
+
+    data = []
+    for project in projects:
+        data.append({
+            "pk": str(project.pk),
+            "title": project.title,
+            "description": project.description,
+            "category": project.category,
+            "tech_stack": project.tech_stack or "",
+            "project_url": project.project_url or "",
+            "thumbnail": project.thumbnail or "",
+            "star_count": project.starred_by.count(),
+            "is_starred": request.user.is_authenticated and project.starred_by.filter(pk=request.user.pk).exists(),
+            "starred_by_names": [user.username for user in project.starred_by.all()],
+        })
+
+    return JsonResponse(data, safe=False)
+
+# Alias untuk show_project_json agar kompatibel
+show_project_json = get_projects_json
 
 # Mengembalikan 1 data proyek berdasarkan ID dalam format XML
 def show_project_xml_by_id(request, id):

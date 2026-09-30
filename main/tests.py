@@ -101,23 +101,44 @@ class MainTest(TestCase):
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
         self.assertContains(response, f'href="{reverse("main:show_experience")}"')
 
-    # test render konten data project
+    # test render struktur halaman projects (AJAX skeleton)
     def test_projects_page_displays_data(self):
         response = self.client.get(reverse("main:show_projects"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.project.title)
-        self.assertContains(response, self.project.description)
-        self.assertContains(response, self.project.category)
-        self.assertContains(response, self.project.tech_stack)
+        self.assertContains(response, 'id="projects-grid"')
+        self.assertContains(response, 'id="search-input"')
+
+        # test endpoint AJAX get_projects_json
+        json_res = self.client.get(reverse("main:get_projects_json"))
+        self.assertEqual(json_res.status_code, 200)
+        data = json_res.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], self.project.title)
 
     # test tampilan kalau database project lagi kosong
     def test_empty_projects_page(self):
         Project.objects.all().delete()
         response = self.client.get(reverse("main:show_projects"))
-
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Belum ada proyek yang ditambahkan.")
+
+        # test endpoint AJAX get_projects_json mengembalikan list kosong
+        json_res = self.client.get(reverse("main:get_projects_json"))
+        self.assertEqual(json_res.status_code, 200)
+        self.assertEqual(json_res.json(), [])
+
+    # test pencarian via AJAX get_projects_json
+    def test_get_projects_json_search(self):
+        response = self.client.get(reverse("main:get_projects_json") + "?title=Personal")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], self.project.title)
+
+        # pencarian dengan kata kunci yang tidak ada
+        response_empty = self.client.get(reverse("main:get_projects_json") + "?title=NonExistent")
+        self.assertEqual(response_empty.status_code, 200)
+        self.assertEqual(response_empty.json(), [])
 
     # test akses halaman form tambah pengalaman (GET)
     def test_create_experience_page_accessible(self):

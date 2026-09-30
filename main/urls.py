@@ -20,6 +20,7 @@ from main.views import (
     show_json_by_id,
     show_project_xml,
     show_project_json,
+    get_projects_json,
     show_project_xml_by_id,
     show_project_json_by_id,
 )
@@ -57,7 +58,8 @@ urlpatterns = [
 
     # Data Delivery Project (XML & JSON)
     path('projects/xml/', show_project_xml, name='show_project_xml'),
-    path('projects/json/', show_project_json, name='show_project_json'),
+    path('projects/json/', get_projects_json, name='get_projects_json'),
+    path('projects/json/legacy/', get_projects_json, name='show_project_json'),
     path('projects/xml/<str:id>/', show_project_xml_by_id, name='show_project_xml_by_id'),
     path('projects/json/<str:id>/', show_project_json_by_id, name='show_project_json_by_id'),
 ]
