@@ -474,3 +474,63 @@ class MainTest(TestCase):
         self.assertNotIn("<script>", created_project.description)
         self.assertNotIn("<p>", created_project.description)
         self.assertNotIn("<script>", created_project.tech_stack)
+
+    # test tambah experience via ajax post oleh superuser
+    def test_create_experience_ajax_success(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
+        response = self.client.post(reverse("main:create_experience_ajax"), {
+            "title": "Data Analyst Intern",
+            "description": "Mengolah dan memvisualisasikan data bisnis menggunakan Python.",
+            "category": "internship",
+        })
+
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertTrue(Experience.objects.filter(title="Data Analyst Intern").exists())
+
+    # test otorisasi create_experience_ajax untuk user non-superuser
+    def test_create_experience_ajax_permission_denied(self):
+        # user belum login dialihkan ke login (302)
+        response_unauth = self.client.post(reverse("main:create_experience_ajax"), {
+            "title": "Unauthorized Experience",
+            "description": "Should fail",
+            "category": "internship",
+        })
+        self.assertEqual(response_unauth.status_code, 302)
+
+        # user biasa (bukan superuser) dilarang (403)
+        self.client.login(username="sasha_guest", password="userpassword123")
+        response_user = self.client.post(reverse("main:create_experience_ajax"), {
+            "title": "Unauthorized Experience",
+            "description": "Should fail",
+            "category": "internship",
+        })
+        self.assertEqual(response_user.status_code, 403)
+
+        # editor (bukan superuser) dilarang (403)
+        self.client.login(username="budi_editor", password="editorpassword123")
+        response_editor = self.client.post(reverse("main:create_experience_ajax"), {
+            "title": "Unauthorized Experience",
+            "description": "Should fail",
+            "category": "internship",
+        })
+        self.assertEqual(response_editor.status_code, 403)
+
+    # test sanitasi xss (strip_tags) pada form input experience
+    def test_experience_form_strip_tags_xss(self):
+        self.client.login(username="nayla_admin", password="adminpassword123")
+        xss_payload = "<script>alert('xss_attack');</script>Frontend Developer"
+        
+        response = self.client.post(reverse("main:create_experience_ajax"), {
+            "title": xss_payload,
+            "description": "<p>Deskripsi pengalaman <script>alert('xss');</script></p>",
+            "category": "freelance",
+        })
+
+        self.assertEqual(response.status_code, 201)
+        created_exp = Experience.objects.get(title__contains="Frontend Developer")
+        self.assertNotIn("<script>", created_exp.title)
+        self.assertNotIn("</script>", created_exp.title)
+        self.assertNotIn("<script>", created_exp.description)
+        self.assertNotIn("<p>", created_exp.description)

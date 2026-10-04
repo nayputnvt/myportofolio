@@ -2,13 +2,13 @@ from django.forms import ModelForm
 from django.utils.html import strip_tags
 from main.models import Experience, Project
 
-# Form untuk menambah pengalaman baru
+# form buat nambah pengalaman
 class ExperienceForm(ModelForm):
     class Meta:
         model = Experience
         fields = ["title", "description", "category", "thumbnail"]
 
-    # Sanitasi teks pengalaman untuk mencegah XSS
+    # sanitasi input pengalaman biar aman dari xss
     def clean_title(self):
         title = self.cleaned_data.get("title", "")
         return strip_tags(title)
@@ -17,13 +17,17 @@ class ExperienceForm(ModelForm):
         description = self.cleaned_data.get("description", "")
         return strip_tags(description)
 
-# Form untuk menambah proyek baru (lengkap dengan thumbnail foto)
+    def clean_category(self):
+        category = self.cleaned_data.get("category", "")
+        return strip_tags(category)
+
+# form buat nambah project
 class ProjectForm(ModelForm):
     class Meta:
         model = Project
         fields = ["title", "description", "category", "thumbnail", "tech_stack", "project_url"]
 
-    # Sanitasi input teks proyek di server untuk mencegah serangan XSS
+    # sanitasi input teks project di server biar aman dari xss
     def clean_title(self):
         title = self.cleaned_data.get("title", "")
         return strip_tags(title)

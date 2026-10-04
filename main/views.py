@@ -1,4 +1,5 @@
 import datetime
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.core import serializers
@@ -35,7 +36,7 @@ def login_user(request):
         user = form.get_user()
         login(request, user)
         response = redirect("main:show_main")
-        response.set_cookie("last_login", str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        response.set_cookie("last_login", str(timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S")))
         return response
 
     context = {
@@ -88,10 +89,10 @@ def show_projects(request):
     }
     return render(request, "projects.html", context)
 
-# Form tambah pengalaman baru
+# form tambah pengalaman baru (halaman standar)
 @login_required(login_url="/login/")
 def create_experience(request):
-    # Hanya Superuser (pemilik portofolio) yang boleh membuat data baru
+    # cuma superuser yang boleh bikin data baru
     if not request.user.is_superuser:
         raise PermissionDenied
 
@@ -106,6 +107,41 @@ def create_experience(request):
         "form": form,
     }
     return render(request, "create_experience.html", context)
+
+# tambah pengalaman baru pake ajax post
+@login_required(login_url="/login/")
+@require_POST
+def create_experience_ajax(request):
+    # cuma superuser yang boleh nambah data lewat ajax
+    if not request.user.is_superuser:
+        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+
+    form = ExperienceForm(request.POST)
+    if form.is_valid():
+        experience = form.save()
+        return JsonResponse({
+            "status": "success",
+            "message": "Pengalaman baru berhasil ditambahkan!",
+            "experience": {
+                "pk": str(experience.pk),
+                "title": experience.title,
+                "category": experience.category,
+                "category_display": experience.get_category_display(),
+                "description": experience.description,
+                "thumbnail": experience.thumbnail or "",
+                "is_ongoing": experience.is_ongoing,
+                "started_at": experience.started_at.strftime("%Y-%m-%d") if experience.started_at else "",
+                "ended_at": experience.ended_at.strftime("%Y-%m-%d") if experience.ended_at else "",
+                "star_count": experience.starred_by.count(),
+                "is_starred": False,
+            }
+        }, status=201)
+
+    return JsonResponse({
+        "status": "error",
+        "message": "Data form tidak valid.",
+        "errors": form.errors
+    }, status=400)
 
 # Form tambah proyek baru (halaman standar)
 @login_required(login_url="/login/")
@@ -254,11 +290,12 @@ def show_xml(request):
     data = Experience.objects.all()
     return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
 
-# Mengembalikan data pengalaman dalam format JSON untuk AJAX dan pencarian dinamis
+# ambil data pengalaman format json buat ajax dan pencarian
 def get_experiences_json(request):
     title_query = request.GET.get('title', '').strip() or request.GET.get('q', '').strip()
     experiences = Experience.objects.all()
 
+    # filter kalau ada query pencarian
     if title_query:
         experiences = experiences.filter(
             Q(title__icontains=title_query) | 
@@ -285,7 +322,7 @@ def get_experiences_json(request):
 
     return JsonResponse(data, safe=False)
 
-# Alias untuk show_json agar kompatibel
+# alias show_json biar kompatibel
 show_json = get_experiences_json
 
 # Mengembalikan 1 data pengalaman berdasarkan ID dalam format XML

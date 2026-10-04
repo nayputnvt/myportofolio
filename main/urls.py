@@ -4,6 +4,7 @@ from main.views import (
     show_experience, 
     show_projects, 
     create_experience,
+    create_experience_ajax,
     create_project,
     create_project_ajax,
     edit_project,
@@ -42,6 +43,8 @@ urlpatterns = [
 
     # Form Experience & Star
     path('create-experience/', create_experience, name='create_experience'),
+    path('create-experience-ajax/', create_experience_ajax, name='create_experience_ajax'),
+    path('experience/add-ajax/', create_experience_ajax, name='create_experience_ajax_alt'),
     path('edit-experience/<str:id>/', edit_experience, name='edit_experience'),
     path('delete-experience/<str:id>/', delete_experience, name='delete_experience'),
     path('experience/star/<str:id>/', toggle_experience_star, name='toggle_experience_star'),

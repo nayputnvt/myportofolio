@@ -218,13 +218,13 @@
         <div class="container">
             <p class="section-kicker">Background</p>
 
-            <!-- baris header: judul di kiri, tombol + Add Experience di kanan (hanya superuser/pemilik) -->
+            <!-- baris header: judul di kiri, tombol + Add Experience di kanan (cuma superuser) -->
             <div class="section-header-top">
                 <h1 class="experience-title">Experience</h1>
                 {% if user.is_superuser %}
-                    <a href="{% url 'main:create_experience' %}" class="btn-add-experience" id="btn-open-add-modal">
+                    <button type="button" class="btn-add-experience" id="btn-open-add-modal" style="cursor: pointer; border: none;">
                         + Add Experience
-                    </a>
+                    </button>
                 {% endif %}
             </div>
 
@@ -263,7 +263,49 @@
         </div>
     </section>
 
-    <!-- Script AJAX Fetch API & Live Search Experience -->
+    <!-- modal popover tambah pengalaman baru (cuma superuser) -->
+    {% if user.is_superuser %}
+    <div id="add-experience-modal" class="modal-popover" popover="manual">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 class="modal-title">Tambah Pengalaman Baru</h2>
+                <button type="button" class="btn-close-modal" id="btn-close-add-modal" aria-label="Tutup">&times;</button>
+            </div>
+            <form id="add-experience-form" class="modal-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_title">Judul Pengalaman / Posisi *</label>
+                    <input type="text" name="title" id="id_title" required class="form-input" placeholder="e.g. Software Engineer Intern">
+                </div>
+                <div class="form-group">
+                    <label for="id_category">Kategori *</label>
+                    <select name="category" id="id_category" required class="form-input">
+                        <option value="internship">Internship</option>
+                        <option value="research">Research</option>
+                        <option value="volunteer">Volunteer</option>
+                        <option value="part-time">Part-Time</option>
+                        <option value="full-time" selected>Full-Time</option>
+                        <option value="freelance">Freelance</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="id_thumbnail">URL Foto / Logo Organisasi</label>
+                    <input type="url" name="thumbnail" id="id_thumbnail" class="form-input" placeholder="https://images.unsplash.com/...">
+                </div>
+                <div class="form-group">
+                    <label for="id_description">Deskripsi Pengalaman *</label>
+                    <textarea name="description" id="id_description" required class="form-textarea" rows="4" placeholder="Jelaskan peran, tanggung jawab, dan pencapaian kamu..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="btn-cancel-add-modal">Batal</button>
+                    <button type="submit" class="btn-submit" id="btn-submit-experience">Simpan Pengalaman</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- script ajax fetch api, live search experience, & modal form -->
     <script>
         const CURRENT_USER = "{{ user.username|default:'' }}";
         const IS_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
@@ -271,6 +313,7 @@
         const IS_EDITOR = {{ is_editor|yesno:"true,false" }};
         const CSRF_TOKEN = "{{ csrf_token }}";
         const EXPERIENCES_API_URL = "{% url 'main:get_experiences_json' %}";
+        const CREATE_EXPERIENCE_AJAX_URL = "{% url 'main:create_experience_ajax' %}";
         const STAR_EXP_BASE_URL = "{% url 'main:toggle_experience_star' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000/', '');
         const LOGIN_URL = "{% url 'main:login' %}";
 
@@ -282,10 +325,17 @@
         const emptyStateMessage = document.getElementById('empty-state-message');
         const experienceGrid = document.getElementById('experience-grid');
 
+        // elemen modal tambah pengalaman
+        const addExperienceModal = document.getElementById('add-experience-modal');
+        const btnOpenAddModal = document.getElementById('btn-open-add-modal');
+        const btnCloseAddModal = document.getElementById('btn-close-add-modal');
+        const btnCancelAddModal = document.getElementById('btn-cancel-add-modal');
+        const addExperienceForm = document.getElementById('add-experience-form');
+
         let searchDebounceTimer = null;
         let currentAbortController = null;
 
-        // Sanitasi teks untuk mencegah stored/reflected XSS di frontend
+        // sanitasi teks biar aman dari serangan xss di frontend
         function escapeHtml(value) {
             if (value === null || value === undefined) return '';
             return String(value)
@@ -296,7 +346,7 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // Pengatur visibilitas container state
+        // pengatur visibilitas container state
         function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
             loadingState.classList.toggle('hide', !showLoading);
             errorState.classList.toggle('hide', !showError);
@@ -304,7 +354,71 @@
             experienceGrid.classList.toggle('hide', !showGrid);
         }
 
-        // Membuat elemen kartu pengalaman
+        // buka dan tutup modal popover
+        function openModal() {
+            if (addExperienceModal) {
+                addExperienceModal.showPopover();
+            }
+        }
+
+        function closeModal() {
+            if (addExperienceModal && addExperienceModal.matches(':popover-open')) {
+                addExperienceModal.hidePopover();
+            }
+            if (addExperienceForm) {
+                addExperienceForm.reset();
+            }
+        }
+
+        if (btnOpenAddModal) btnOpenAddModal.addEventListener('click', openModal);
+        if (btnCloseAddModal) btnCloseAddModal.addEventListener('click', closeModal);
+        if (btnCancelAddModal) btnCancelAddModal.addEventListener('click', closeModal);
+
+        // submit form tambah pengalaman pake ajax post
+        if (addExperienceForm) {
+            addExperienceForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const submitBtn = document.getElementById('btn-submit-experience');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Menyimpan...';
+                }
+
+                const formData = new FormData(addExperienceForm);
+
+                try {
+                    const response = await fetch(CREATE_EXPERIENCE_AJAX_URL, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': CSRF_TOKEN,
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.status === 'success') {
+                        closeModal();
+                        showToast("Berhasil!", "Pengalaman baru berhasil ditambahkan.", "success");
+                        // refresh data pengalaman tanpa reload halaman
+                        fetchExperiences(searchInput.value.trim());
+                    } else {
+                        const errorMsg = result.message || "Gagal menambahkan pengalaman. Cek lagi isian form kamu.";
+                        showToast("Gagal!", errorMsg, "error");
+                    }
+                } catch (error) {
+                    console.error('Error submitting experience:', error);
+                    showToast("Error!", "Terjadi kendala jaringan saat menyimpan data.", "error");
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Simpan Pengalaman';
+                    }
+                }
+            });
+        }
+
+        // bikin elemen kartu pengalaman
         function buildExperienceCardElement(item) {
             const card = document.createElement('article');
             card.className = 'experience-card';
@@ -315,7 +429,7 @@
             const safeThumbnail = item.thumbnail ? escapeHtml(item.thumbnail) : '';
             const statusLabel = item.is_ongoing ? 'Sedang berlangsung' : 'Selesai';
 
-            // Thumbnail foto jika ada
+            // thumbnail foto kalau ada
             let thumbnailHtml = '';
             if (safeThumbnail) {
                 thumbnailHtml = `
@@ -325,7 +439,7 @@
                 `;
             }
 
-            // Bagian tombol Star
+            // tombol star
             let starHtml = '';
             if (IS_AUTHENTICATED) {
                 const isStarredClass = item.is_starred ? 'starred' : '';
@@ -347,7 +461,7 @@
                 `;
             }
 
-            // Bagian Tombol Aksi (Edit & Delete)
+            // tombol edit dan delete
             let actionHtml = '';
             if (IS_SUPERUSER || IS_EDITOR) {
                 let deleteButtonHtml = '';
@@ -384,9 +498,9 @@
             return card;
         }
 
-        // Mengambil data pengalaman via Fetch API
+        // ambil data pengalaman via fetch api
         async function fetchExperiences(searchQuery = '') {
-            // Batalkan request yang sedang berjalan jika ada input baru
+            // batalkan request yang masih jalan kalau ada input baru
             if (currentAbortController) {
                 currentAbortController.abort();
             }
@@ -430,7 +544,7 @@
                 }
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    // Diabaikan karena dibatalkan oleh pencarian yang lebih baru
+                    // abaikan kalau dibatalkan oleh search yang lebih baru
                     return;
                 }
                 console.error('Error fetching experiences:', error);
@@ -438,7 +552,7 @@
             }
         }
 
-        // Event listener live search dengan debounce 300ms
+        // live search dengan debounce 300ms
         searchInput.addEventListener('input', (event) => {
             clearTimeout(searchDebounceTimer);
             const query = event.target.value.trim();
@@ -447,14 +561,14 @@
             }, 300);
         });
 
-        // Event listener saat submit form pencarian
+        // listener submit form pencarian
         searchForm.addEventListener('submit', (event) => {
             event.preventDefault();
             clearTimeout(searchDebounceTimer);
             fetchExperiences(searchInput.value.trim());
         });
 
-        // Muat data pengalaman pertama kali saat halaman dibuka
+        // muat data pengalaman pertama kali saat halaman dibuka
         document.addEventListener('DOMContentLoaded', () => {
             fetchExperiences(searchInput.value.trim());
         });
