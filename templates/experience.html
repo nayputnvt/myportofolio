@@ -10,28 +10,78 @@
             width: 100%;
             padding: 3.5rem 0 5rem;
         }
+        .section-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            width: 100%;
+        }
         .experience-title {
             font-size: clamp(2.8rem, 5vw, 4rem);
-            margin-bottom: 1.5rem;
+            margin: 0;
             color: #2b181e;
             font-family: 'Playfair Display', Georgia, serif;
             font-weight: 700;
+            line-height: 1.1;
         }
         .btn-add-experience {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             background-color: #e54d6d;
-            color: #ffffff;
-            padding: 0.65rem 1.5rem;
+            color: #ffffff !important;
+            padding: 0.75rem 1.6rem;
             border-radius: 9999px;
-            font-weight: 600;
-            text-decoration: none;
-            box-shadow: 0 2px 6px rgba(229, 77, 109, 0.25);
-            margin-bottom: 2.5rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-decoration: none !important;
+            box-shadow: 0 4px 12px rgba(229, 77, 109, 0.3);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            white-space: nowrap;
         }
         .btn-add-experience:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(229, 77, 109, 0.35);
+            box-shadow: 0 6px 18px rgba(229, 77, 109, 0.4);
+            background-color: #b82346;
+        }
+        /* form pencarian full-width */
+        .search-bar-container {
+            display: flex;
+            gap: 0.75rem;
+            width: 100%;
+            margin-bottom: 2.5rem;
+        }
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1.25rem;
+            border: 1.5px solid #f4d3db;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            background-color: #ffffff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .search-input:focus {
+            border-color: #e54d6d;
+            box-shadow: 0 0 0 3px rgba(229, 77, 109, 0.15);
+        }
+        .btn-search {
+            background-color: #e54d6d;
+            color: #ffffff;
+            border: none;
+            padding: 0.75rem 1.8rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(229, 77, 109, 0.2);
+        }
+        .btn-search:hover {
+            background-color: #b82346;
+            transform: translateY(-1px);
         }
         .experience-grid {
             display: grid;
@@ -70,6 +120,11 @@
             object-fit: cover;
             display: block;
         }
+        .badge-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         .badge-pill {
             display: inline-block;
             font-size: 0.75rem;
@@ -81,6 +136,43 @@
             border-radius: 9999px;
             box-shadow: 0 2px 6px rgba(229, 77, 109, 0.25);
             width: fit-content;
+        }
+        .btn-star {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1.5px solid #f4d3db;
+            background-color: #ffffff;
+            color: #78535e;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .btn-star:hover {
+            border-color: #e54d6d;
+            color: #e54d6d;
+            background-color: #fff8f9;
+        }
+        .btn-star.starred {
+            background-color: #fdf0f3;
+            border-color: #e54d6d;
+            color: #b82346;
+        }
+        .star-count {
+            background-color: #f4d3db;
+            color: #2b181e;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .btn-star.starred .star-count {
+            background-color: #e54d6d;
+            color: #ffffff;
         }
         .card-title {
             font-family: 'Playfair Display', Georgia, serif;
@@ -98,10 +190,10 @@
             margin: 0;
         }
         .experience-status {
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             font-weight: 600;
             color: #b82346;
-            margin-top: 0.5rem;
+            margin-top: 0.25rem;
         }
         .empty-state {
             color: #78535e;
@@ -112,6 +204,11 @@
             .experience-grid {
                 grid-template-columns: 1fr;
             }
+            .section-header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
         }
     </style>
 {% endblock meta %}
@@ -120,78 +217,246 @@
     <section class="experience-section" id="experience">
         <div class="container">
             <p class="section-kicker">Background</p>
-            <h1 class="experience-title">Experience</h1>
 
-            <!-- tombol navigasi tambah pengalaman baru (hanya superuser/pemilik) -->
-            {% if user.is_superuser %}
-                <div>
-                    <a href="{% url 'main:create_experience' %}" class="btn-add-experience">
+            <!-- baris header: judul di kiri, tombol + Add Experience di kanan (hanya superuser/pemilik) -->
+            <div class="section-header-top">
+                <h1 class="experience-title">Experience</h1>
+                {% if user.is_superuser %}
+                    <a href="{% url 'main:create_experience' %}" class="btn-add-experience" id="btn-open-add-modal">
                         + Add Experience
                     </a>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- form pencarian pengalaman -->
+            <form method="GET" action="{% url 'main:show_experience' %}" id="experience-search-form" class="search-bar-container">
+                <input 
+                    type="text" 
+                    id="search-input"
+                    name="q" 
+                    value="{{ title_query }}" 
+                    placeholder="Search by title, description, or category..." 
+                    class="search-input"
+                    autocomplete="off"
+                >
+                <button type="submit" class="btn-search">Search</button>
+            </form>
+
+            <!-- state loading -->
+            <div id="loading-state" class="hide" style="text-align: center; padding: 4rem 0; color: #78535e;">
+                <p style="font-size: 1.1rem; font-weight: 600;">Memuat daftar pengalaman...</p>
+            </div>
+
+            <!-- state error -->
+            <div id="error-state" class="hide" style="text-align: center; padding: 4rem 0; color: #e54d6d;">
+                <p style="font-size: 1.1rem; font-weight: 600;">Terjadi kesalahan saat memuat data pengalaman.</p>
+                <button type="button" onclick="fetchExperiences(searchInput.value.trim())" class="btn-search" style="margin-top: 1rem;">Coba Lagi</button>
+            </div>
+
+            <!-- state empty -->
+            <div id="empty-state" class="empty-state hide">
+                <p id="empty-state-message">Belum ada pengalaman yang ditambahkan.</p>
+            </div>
 
             <!-- grid daftar kartu pengalaman -->
-            <div class="experience-grid">
-                {% for experience in experience_list %}
-                    <article class="experience-card">
-                        <!-- Foto Pengalaman jika thumbnail diisi -->
-                        {% if experience.thumbnail %}
-                            <div class="experience-img-wrapper">
-                                <img src="{{ experience.thumbnail }}" alt="{{ experience.title }}" class="experience-img">
-                            </div>
-                        {% endif %}
-
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span class="badge-pill">{{ experience.get_category_display }}</span>
-
-                            <!-- Tombol Star Pengalaman -->
-                            {% if user.is_authenticated %}
-                                <form method="POST" action="{% url 'main:toggle_experience_star' experience.id %}" style="display: inline; margin: 0;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn-star {% if user in experience.starred_by.all %}starred{% endif %}" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; border: 1.5px solid #f4d3db; background-color: {% if user in experience.starred_by.all %}#fdf0f3{% else %}#ffffff{% endif %}; color: {% if user in experience.starred_by.all %}#b82346{% else %}#78535e{% endif %}; cursor: pointer; text-decoration: none;">
-                                        {% if user in experience.starred_by.all %}★ Starred{% else %}☆ Star{% endif %}
-                                        <span class="star-count" style="background-color: {% if user in experience.starred_by.all %}#e54d6d{% else %}#f4d3db{% endif %}; color: {% if user in experience.starred_by.all %}#ffffff{% else %}#2b181e{% endif %}; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700;">{{ experience.starred_by.count }}</span>
-                                    </button>
-                                </form>
-                            {% else %}
-                                <a href="{% url 'main:login' %}" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; border: 1.5px solid #f4d3db; background-color: #ffffff; color: #78535e; text-decoration: none;" title="Login untuk memberi star">
-                                    ☆ Star <span style="background-color: #f4d3db; color: #2b181e; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700;">{{ experience.starred_by.count }}</span>
-                                </a>
-                            {% endif %}
-                        </div>
-
-                        <h2 class="card-title">{{ experience.title }}</h2>
-                        <p class="experience-description">
-                            {{ experience.description }}
-                        </p>
-
-                        {% if experience.is_ongoing %}
-                            <p class="experience-status">Sedang berlangsung</p>
-                        {% else %}
-                            <p class="experience-status">Selesai</p>
-                        {% endif %}
-
-                        <!-- tombol aksi edit (superuser & editor) dan delete (superuser only) -->
-                        {% if user.is_superuser or is_editor %}
-                            <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #fce8ec;">
-                                <a href="{% url 'main:edit_experience' experience.id %}" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fdf0f3; color: #b82346; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #f4d3db;">
-                                    Edit
-                                </a>
-                                {% if user.is_superuser %}
-                                    <a href="{% url 'main:delete_experience' experience.id %}" onclick="return confirm('Apakah kamu yakin ingin menghapus pengalaman ini?');" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #ffc9c9;">
-                                        Delete
-                                    </a>
-                                {% endif %}
-                            </div>
-                        {% endif %}
-                    </article>
-                {% empty %}
-                    <p class="empty-state">
-                        Belum ada pengalaman yang ditambahkan.
-                    </p>
-                {% endfor %}
-            </div>
+            <div id="experience-grid" class="experience-grid hide"></div>
         </div>
     </section>
+
+    <!-- Script AJAX Fetch API & Live Search Experience -->
+    <script>
+        const CURRENT_USER = "{{ user.username|default:'' }}";
+        const IS_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
+        const IS_SUPERUSER = {{ user.is_superuser|yesno:"true,false" }};
+        const IS_EDITOR = {{ is_editor|yesno:"true,false" }};
+        const CSRF_TOKEN = "{{ csrf_token }}";
+        const EXPERIENCES_API_URL = "{% url 'main:get_experiences_json' %}";
+        const STAR_EXP_BASE_URL = "{% url 'main:toggle_experience_star' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000/', '');
+        const LOGIN_URL = "{% url 'main:login' %}";
+
+        const searchForm = document.getElementById('experience-search-form');
+        const searchInput = document.getElementById('search-input');
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+        const emptyState = document.getElementById('empty-state');
+        const emptyStateMessage = document.getElementById('empty-state-message');
+        const experienceGrid = document.getElementById('experience-grid');
+
+        let searchDebounceTimer = null;
+        let currentAbortController = null;
+
+        // Sanitasi teks untuk mencegah stored/reflected XSS di frontend
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Pengatur visibilitas container state
+        function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
+            loadingState.classList.toggle('hide', !showLoading);
+            errorState.classList.toggle('hide', !showError);
+            emptyState.classList.toggle('hide', !showEmpty);
+            experienceGrid.classList.toggle('hide', !showGrid);
+        }
+
+        // Membuat elemen kartu pengalaman
+        function buildExperienceCardElement(item) {
+            const card = document.createElement('article');
+            card.className = 'experience-card';
+
+            const safeTitle = escapeHtml(item.title);
+            const safeCategory = escapeHtml(item.category_display || item.category || 'Experience');
+            const safeDescription = escapeHtml(item.description || '').replace(/\n/g, '<br>');
+            const safeThumbnail = item.thumbnail ? escapeHtml(item.thumbnail) : '';
+            const statusLabel = item.is_ongoing ? 'Sedang berlangsung' : 'Selesai';
+
+            // Thumbnail foto jika ada
+            let thumbnailHtml = '';
+            if (safeThumbnail) {
+                thumbnailHtml = `
+                    <div class="experience-img-wrapper">
+                        <img src="${safeThumbnail}" alt="${safeTitle}" class="experience-img" loading="lazy">
+                    </div>
+                `;
+            }
+
+            // Bagian tombol Star
+            let starHtml = '';
+            if (IS_AUTHENTICATED) {
+                const isStarredClass = item.is_starred ? 'starred' : '';
+                const starLabel = item.is_starred ? '★ Starred' : '☆ Star';
+                starHtml = `
+                    <form method="POST" action="${STAR_EXP_BASE_URL}${encodeURIComponent(item.pk)}/" style="display: inline; margin: 0;">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${CSRF_TOKEN}">
+                        <button type="submit" class="btn-star ${isStarredClass}">
+                            ${starLabel}
+                            <span class="star-count">${item.star_count}</span>
+                        </button>
+                    </form>
+                `;
+            } else {
+                starHtml = `
+                    <a href="${LOGIN_URL}" class="btn-star" title="Login untuk memberi star">
+                        ☆ Star <span class="star-count">${item.star_count}</span>
+                    </a>
+                `;
+            }
+
+            // Bagian Tombol Aksi (Edit & Delete)
+            let actionHtml = '';
+            if (IS_SUPERUSER || IS_EDITOR) {
+                let deleteButtonHtml = '';
+                if (IS_SUPERUSER) {
+                    deleteButtonHtml = `
+                        <a href="/delete-experience/${encodeURIComponent(item.pk)}/" onclick="return confirm('Apakah kamu yakin ingin menghapus pengalaman ini?');" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #ffc9c9;">
+                            Delete
+                        </a>
+                    `;
+                }
+
+                actionHtml = `
+                    <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #fce8ec;">
+                        <a href="/edit-experience/${encodeURIComponent(item.pk)}/" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fdf0f3; color: #b82346; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #f4d3db;">
+                            Edit
+                        </a>
+                        ${deleteButtonHtml}
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                ${thumbnailHtml}
+                <div class="badge-wrapper">
+                    <span class="badge-pill">${safeCategory}</span>
+                    ${starHtml}
+                </div>
+                <h2 class="card-title">${safeTitle}</h2>
+                <p class="experience-description">${safeDescription}</p>
+                <p class="experience-status">${statusLabel}</p>
+                ${actionHtml}
+            `;
+
+            return card;
+        }
+
+        // Mengambil data pengalaman via Fetch API
+        async function fetchExperiences(searchQuery = '') {
+            // Batalkan request yang sedang berjalan jika ada input baru
+            if (currentAbortController) {
+                currentAbortController.abort();
+            }
+            currentAbortController = new AbortController();
+
+            displayPageSection({ showLoading: true });
+
+            try {
+                const url = new URL(EXPERIENCES_API_URL, window.location.origin);
+                if (searchQuery) {
+                    url.searchParams.set('title', searchQuery);
+                }
+
+                const response = await fetch(url.toString(), {
+                    signal: currentAbortController.signal,
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const experiences = await response.json();
+
+                if (!Array.isArray(experiences) || experiences.length === 0) {
+                    if (searchQuery) {
+                        emptyStateMessage.textContent = `Tidak ditemukan pengalaman dengan kata kunci "${searchQuery}".`;
+                    } else {
+                        emptyStateMessage.textContent = 'Belum ada pengalaman yang ditambahkan.';
+                    }
+                    displayPageSection({ showEmpty: true });
+                } else {
+                    experienceGrid.innerHTML = '';
+                    experiences.forEach(exp => {
+                        const cardElement = buildExperienceCardElement(exp);
+                        experienceGrid.appendChild(cardElement);
+                    });
+                    displayPageSection({ showGrid: true });
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    // Diabaikan karena dibatalkan oleh pencarian yang lebih baru
+                    return;
+                }
+                console.error('Error fetching experiences:', error);
+                displayPageSection({ showError: true });
+            }
+        }
+
+        // Event listener live search dengan debounce 300ms
+        searchInput.addEventListener('input', (event) => {
+            clearTimeout(searchDebounceTimer);
+            const query = event.target.value.trim();
+            searchDebounceTimer = setTimeout(() => {
+                fetchExperiences(query);
+            }, 300);
+        });
+
+        // Event listener saat submit form pencarian
+        searchForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            clearTimeout(searchDebounceTimer);
+            fetchExperiences(searchInput.value.trim());
+        });
+
+        // Muat data pengalaman pertama kali saat halaman dibuka
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchExperiences(searchInput.value.trim());
+        });
+    </script>
 {% endblock content %}

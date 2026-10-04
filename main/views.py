@@ -66,13 +66,13 @@ def show_main(request):
     }
     return render(request, "index.html", context)
 
-# Halaman daftar pengalaman
+# Halaman daftar pengalaman (rendering kerangka untuk AJAX)
 def show_experience(request):
-    # Cek apakah pengguna memiliki hak akses Editor atau Superuser
+    title_query = request.GET.get('title', '').strip() or request.GET.get('q', '').strip()
     is_editor = request.user.is_authenticated and (request.user.is_superuser or request.user.groups.filter(name='Editor').exists())
     context = {
         "name": "Nayla",
-        "experience_list": Experience.objects.all(),
+        "title_query": title_query,
         "is_editor": is_editor,
     }
     return render(request, "experience.html", context)
@@ -254,10 +254,39 @@ def show_xml(request):
     data = Experience.objects.all()
     return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
 
-# Mengembalikan seluruh data pengalaman dalam format JSON
-def show_json(request):
-    data = Experience.objects.all()
-    return HttpResponse(serializers.serialize("json", data, use_natural_foreign_keys=True), content_type="application/json")
+# Mengembalikan data pengalaman dalam format JSON untuk AJAX dan pencarian dinamis
+def get_experiences_json(request):
+    title_query = request.GET.get('title', '').strip() or request.GET.get('q', '').strip()
+    experiences = Experience.objects.all()
+
+    if title_query:
+        experiences = experiences.filter(
+            Q(title__icontains=title_query) | 
+            Q(description__icontains=title_query) |
+            Q(category__icontains=title_query)
+        )
+
+    data = []
+    for exp in experiences:
+        data.append({
+            "pk": str(exp.pk),
+            "title": exp.title,
+            "description": exp.description,
+            "category": exp.category,
+            "category_display": exp.get_category_display(),
+            "thumbnail": exp.thumbnail or "",
+            "is_ongoing": exp.is_ongoing,
+            "started_at": exp.started_at.strftime("%Y-%m-%d") if exp.started_at else "",
+            "ended_at": exp.ended_at.strftime("%Y-%m-%d") if exp.ended_at else "",
+            "star_count": exp.starred_by.count(),
+            "is_starred": request.user.is_authenticated and exp.starred_by.filter(pk=request.user.pk).exists(),
+            "starred_by_names": [user.username for user in exp.starred_by.all()],
+        })
+
+    return JsonResponse(data, safe=False)
+
+# Alias untuk show_json agar kompatibel
+show_json = get_experiences_json
 
 # Mengembalikan 1 data pengalaman berdasarkan ID dalam format XML
 def show_xml_by_id(request, id):

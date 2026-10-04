@@ -62,23 +62,47 @@ class MainTest(TestCase):
         self.assertEqual(self.experience.category, "part-time")
         self.assertTrue(self.experience.is_ongoing)
 
-    # test render konten halaman experience
+    # test render struktur halaman experience (AJAX skeleton) & get_experiences_json
     def test_experience_page(self):
         response = self.client.get(reverse("main:show_experience"))
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "experience.html")
-        self.assertContains(response, self.experience.title)
-        self.assertContains(response, self.experience.description)
+        self.assertContains(response, 'id="experience-grid"')
+        self.assertContains(response, 'id="search-input"')
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
         self.assertContains(response, f'href="{reverse("main:show_projects")}"')
+
+        # test endpoint AJAX get_experiences_json
+        json_res = self.client.get(reverse("main:get_experiences_json"))
+        self.assertEqual(json_res.status_code, 200)
+        data = json_res.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], self.experience.title)
 
     # test tampilan kalau database experience lagi kosong
     def test_empty_experience_page(self):
         Experience.objects.all().delete()
         response = self.client.get(reverse("main:show_experience"))
-
         self.assertEqual(response.status_code, 200)
+
+        # test endpoint AJAX get_experiences_json mengembalikan list kosong
+        json_res = self.client.get(reverse("main:get_experiences_json"))
+        self.assertEqual(json_res.status_code, 200)
+        self.assertEqual(json_res.json(), [])
+
+    # test pencarian via AJAX get_experiences_json
+    def test_get_experiences_json_search(self):
+        response = self.client.get(reverse("main:get_experiences_json") + "?title=Software")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], self.experience.title)
+
+        # pencarian dengan kata kunci yang tidak cocok
+        response_empty = self.client.get(reverse("main:get_experiences_json") + "?title=NonExistent")
+        self.assertEqual(response_empty.status_code, 200)
+        self.assertEqual(response_empty.json(), [])
 
     # test status kalau tanggal selesai diisi
     def test_completed_experience(self):
