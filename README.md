@@ -111,3 +111,37 @@ Dalam menyelesaikan Tugas 4 ini, saya memanfaatkan AI Assistant (Google Gemini) 
 Diskusi difokuskan pada pemahaman perbedaan session dan cookie, cara kerja `PermissionDenied` untuk menghasilkan respon HTTP 403, penanganan relasi `ManyToManyField` pada serialisasi JSON, dan pembuatan skenario pengujian 4 peran di `tests.py`. Seluruh penulisan kode, penyesuaian logika peran, perapian antarmuka, hingga verifikasi pengujian 33 unit test saya pelajari, terapkan, dan uji secara mandiri pada proyek `myportofolio`.
 
 * **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi Konsep Tugas 4 di Google Gemini](https://share.gemini.google/BLbvmPPDAYfR)
+
+
+### Tugas 5
+
+1. **Jelaskan apa itu debouncing dan mengapa teknik ini penting diterapkan pada fitur pencarian yang menggunakan AJAX!**
+   - **Pengertian Debouncing:** Debouncing adalah teknik pemrograman JavaScript untuk menunda eksekusi suatu fungsi sampai beberapa saat setelah pengguna berhenti melakukan aksi (misalnya berhenti mengetik pada kolom pencarian). Setiap kali pengguna menekan tombol keyboard baru, timer penundaan di-reset kembali dari awal, sehingga fungsi pencarian baru akan benar-benar dijalankan ketika pengguna sudah diam atau selesai mengetik selama durasi jeda tertentu (pada tugas ini diatur 300 ms).
+   - **Alasan Penting Diterapkan pada Pencarian AJAX:**
+     - **Mengurangi Beban Request ke Server:** Tanpa debouncing, setiap karakter yang diketik atau dihapus oleh pengguna akan langsung mengirim satu request HTTP via AJAX ke server backend. Jika pengguna mengetik 10 karakter dengan cepat, server akan dihujani 10 request beruntun. Dengan debouncing, request hanya dikirim 1 kali setelah pengguna selesai mengetik kata kuncinya.
+     - **Mencegah Masalah Race Condition:** Request jaringan membutuhkan waktu respon yang bervariasi. Jika request dikirim terus-menerus tanpa jeda, respon dari pencarian yang lama bisa saja datang lebih lambat daripada respon pencarian yang baru, sehingga tampilan hasil pencarian bisa keliru atau tidak sesuai dengan kata kunci terakhir yang diketik pengguna.
+     - **Meningkatkan Performa dan Pengalaman Pengguna (UX):** Debouncing membuat aplikasi terasa lebih responsif, hemat bandwidth jaringan, dan antarmuka tidak mengalami kedipan (*flickering*) karena tidak me-reload data secara berlebihan setiap milidetik.
+
+2. **Jelaskan fungsi dari penggunaan `await` ketika kita menggunakan `fetch()`! Apa yang akan terjadi jika kita tidak menggunakan `await`?**
+   - **Fungsi `await` pada `fetch()`:**
+     - `fetch()` bekerja secara asinkronus (*asynchronous*) dan mengembalikan sebuah objek `Promise` yang mewakili proses pertukaran data jaringan di latar belakang.
+     - Kata kunci `await` berfungsi untuk memberhentikan sementara alur eksekusi kode di dalam fungsi `async` sampai `Promise` dari `fetch()` selesai diselesaikan (*resolved*) dan mengembalikan objek `Response` yang sebenarnya, atau sampai proses `response.json()` selesai mengurai (*parsing*) payload menjadi data JavaScript.
+   - **Apa yang terjadi jika tidak menggunakan `await`:**
+     - Jika kita tidak menggunakan `await` (dan tidak menggunakan rangkaian rantai `.then()`), JavaScript akan langsung mengeksekusi baris kode berikutnya tanpa menunggu respon data dari server selesai tiba.
+     - Variabel yang menampung hasil pemanggilan `fetch()` akan berisi objek `Promise {<pending>}` dan bukan objek `Response` atau data JSON aslinya.
+     - Ketika kode di baris selanjutnya mencoba membaca atau mengiterasi data tersebut (misalnya memanggil `.map()` atau mengakses properti objek), program akan menghasilkan galat *runtime* (seperti `TypeError: Cannot read properties of undefined` atau error karena mencoba memproses `Promise` yang belum selesai).
+
+3. **Jelaskan apa itu serangan XSS (Cross-Site Scripting) dan mengapa data yang ditampilkan melalui AJAX/JavaScript lebih rentan terhadap serangan ini daripada data yang ditampilkan langsung melalui template Django!**
+   - **Pengertian XSS (Cross-Site Scripting):**
+     - XSS adalah jenis kerentanan keamanan web di mana pihak penyerang berhasil menyisipkan skrip berbahaya (biasanya JavaScript) ke dalam konten web yang dilihat oleh pengguna lain. Saat halaman dimuat di peramban korban, skrip berbahaya tersebut otomatis dieksekusi, sehingga penyerang dapat mencuri cookie sesi login, membajak akun pengguna, atau memanipulasi tampilan dan fungsi halaman secara ilegal.
+   - **Alasan Data AJAX/JavaScript Lebih Rentan Dibandingkan Template Django:**
+     - **Auto-Escaping pada Template Django:** Mesin template Django (DTL) secara bawaan (*default*) menerapkan mekanisme *automatic HTML escaping* pada setiap variabel yang dirender (seperti `{{ experience.title }}`). Karakter khusus seperti `<`, `>`, `&`, `"`, dan `'` otomatis diubah menjadi entitas HTML aman (`&lt;`, `&gt;`, dsb.), sehingga kode skrip yang diinput tidak akan dieksekusi sebagai program oleh browser.
+     - **DOM Manipulation Manual di JavaScript:** Saat data diambil via AJAX dalam format JSON, data tersebut diolah dan dimasukkan ke dalam DOM secara manual menggunakan JavaScript. Jika developer menggunakan metode yang tidak aman seperti `innerHTML` atau *template literals* `${data.title}` tanpa melakukan sanitasi manual (atau tanpa memanfaatkan properti aman seperti `textContent`), tag `<script>` atau atribut berbahaya (misalnya `<img src=x onerror=alert(1)>`) yang tersimpan di database akan langsung dirender sebagai elemen HTML hidup dan dieksekusi oleh peramban pengguna.
+     - **Solusi Pencegahan:** Pada proyek ini, pencegahan XSS diterapkan secara berlapis, yaitu sanitasi di sisi server menggunakan fungsi `strip_tags` pada form Django (`forms.py`) sebelum data tersimpan di database, serta fungsi pembersih `escapeHtml()` di sisi client JavaScript sebelum elemen kartu pengalaman dimasukkan ke dalam DOM antarmuka.
+
+**Penggunaan AI:**
+Dalam menyelesaikan Tugas 5 ini, saya memanfaatkan AI Assistant (Google Gemini) secara transparan sebagai rekan diskusi (*learning companion*) untuk mempelajari konsep interaktivitas JavaScript dan AJAX pada Django.
+
+Diskusi difokuskan pada pemahaman mekanisme pengambilan data asinkronus dengan `fetch()` dan `async/await`, penerapan teknik debouncing beserta pembatalan request menggunakan `AbortController`, implementasi modal popover dan AJAX POST untuk penambahan data tanpa reload, serta proteksi keamanan dari serangan XSS (*Cross-Site Scripting*) baik di sisi backend (`strip_tags`) maupun frontend (`escapeHtml`). Seluruh penulisan kode, penyesuaian fungsi view, penataan antarmuka modal dan toast, serta pembuatan skenario pengujian unit test tetap saya pelajari, terapkan, dan uji secara mandiri pada proyek `myportofolio`.
+
+* **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi Konsep Tugas 5 di Google Gemini](https://gemini.google.com)
