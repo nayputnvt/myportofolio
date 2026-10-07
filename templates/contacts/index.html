@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contacts Manager (HTMX) - Nayla Putri Novita{% endblock %}
+
+{% block meta %}
+<!-- load htmx via cdn -->
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js"></script>
+
+<style>
+    .contacts-section {
+        padding: 3rem 0 5rem;
+        background-color: #fff8f9;
+        min-height: 80vh;
+    }
+    .contacts-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+    }
+    .contacts-kicker {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-weight: 700;
+        color: #e54d6d;
+        margin-bottom: 0.25rem;
+    }
+    .contacts-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: #2b181e;
+        margin: 0 0 0.75rem 0;
+    }
+    .contacts-subtitle {
+        color: #78535e;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+
+    /* card form tambah */
+    .card-box {
+        background: #ffffff;
+        border-radius: 1rem;
+        padding: 1.75rem;
+        border: 1px solid #f4d3db;
+        box-shadow: 0 4px 20px rgba(43, 24, 30, 0.04);
+        margin-bottom: 2rem;
+    }
+    .card-box-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #2b181e;
+        margin: 0 0 1.25rem 0;
+    }
+
+    /* form grid */
+    .add-contact-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr auto;
+        gap: 0.75rem;
+        align-items: center;
+    }
+    @media (max-width: 768px) {
+        .add-contact-form {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-input-custom {
+        width: 100%;
+        padding: 0.7rem 1rem;
+        border: 1px solid #f4d3db;
+        border-radius: 0.6rem;
+        font-size: 0.95rem;
+        background-color: #fff8f9;
+        color: #2b181e;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+    }
+    .form-input-custom:focus {
+        outline: none;
+        border-color: #e54d6d;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 3px rgba(229, 77, 109, 0.15);
+    }
+
+    .btn-submit-contact {
+        background-color: #e54d6d;
+        color: #ffffff;
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 0.6rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        white-space: nowrap;
+    }
+    .btn-submit-contact:hover {
+        background-color: #c83254;
+    }
+
+    /* search bar */
+    .search-wrapper {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .search-input-htmx {
+        width: 100%;
+        padding: 0.85rem 1.25rem;
+        border: 1px solid #f4d3db;
+        border-radius: 0.75rem;
+        font-size: 0.95rem;
+        background-color: #ffffff;
+        color: #2b181e;
+        box-sizing: border-box;
+        box-shadow: 0 2px 10px rgba(43, 24, 30, 0.03);
+    }
+    .search-input-htmx:focus {
+        outline: none;
+        border-color: #e54d6d;
+        box-shadow: 0 0 0 3px rgba(229, 77, 109, 0.15);
+    }
+
+    /* htmx indicator */
+    .htmx-indicator {
+        display: none;
+        font-size: 0.85rem;
+        color: #e54d6d;
+        font-weight: 600;
+        margin-top: 0.4rem;
+        margin-left: 0.25rem;
+    }
+    .htmx-request .htmx-indicator,
+    .htmx-request.htmx-indicator {
+        display: inline-block;
+    }
+
+    /* table styling */
+    .contacts-table-wrapper {
+        background: #ffffff;
+        border-radius: 1rem;
+        border: 1px solid #f4d3db;
+        box-shadow: 0 4px 20px rgba(43, 24, 30, 0.04);
+        overflow: hidden;
+    }
+    .contacts-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .contacts-table th {
+        background-color: #fdf0f3;
+        color: #2b181e;
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #f4d3db;
+    }
+    .contacts-table td {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #fcedf1;
+        font-size: 0.95rem;
+        vertical-align: middle;
+    }
+    .contacts-table tr:last-child td {
+        border-bottom: none;
+    }
+    .contacts-table tr:hover {
+        background-color: #fffdfd;
+    }
+
+    /* action buttons */
+    .btn-action-edit {
+        background: #fdf0f3;
+        color: #78535e;
+        border: 1px solid #f4d3db;
+        padding: 0.4rem 0.85rem;
+        border-radius: 0.45rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-right: 0.35rem;
+        transition: all 0.2s ease;
+    }
+    .btn-action-edit:hover {
+        background: #e54d6d;
+        color: #ffffff;
+        border-color: #e54d6d;
+    }
+    .btn-action-delete {
+        background: transparent;
+        color: #dc2626;
+        border: 1px solid #fee2e2;
+        padding: 0.4rem 0.85rem;
+        border-radius: 0.45rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-action-delete:hover {
+        background: #dc2626;
+        color: #ffffff;
+        border-color: #dc2626;
+    }
+    .btn-action-save {
+        background: #16a34a;
+        color: #ffffff;
+        border: none;
+        padding: 0.4rem 0.85rem;
+        border-radius: 0.45rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-right: 0.35rem;
+    }
+    .btn-action-cancel {
+        background: #f3f4f6;
+        color: #4b5563;
+        border: 1px solid #d1d5db;
+        padding: 0.4rem 0.85rem;
+        border-radius: 0.45rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    /* inline form inputs */
+    .form-input-inline {
+        width: 90%;
+        padding: 0.45rem 0.65rem;
+        border: 1px solid #e54d6d;
+        border-radius: 0.45rem;
+        font-size: 0.9rem;
+        background-color: #ffffff;
+        color: #2b181e;
+        box-sizing: border-box;
+    }
+    .row-editing {
+        background-color: #fff9fa !important;
+    }
+</style>
+{% endblock meta %}
+
+{% block content %}
+<div class="contacts-section" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <div class="contacts-container">
+        <p class="contacts-kicker">Tutorial 06</p>
+        <h1 class="contacts-title">Contacts Manager (HTMX)</h1>
+        <p class="contacts-subtitle">
+            Aplikasi pengelola kontak interaktif berbasis <strong>HTMX</strong>. Menambah, mencari, mengedit inline, dan menghapus data kontak terjadi secara asinkronus tanpa reload halaman.
+        </p>
+
+        <!-- card form tambah kontak -->
+        <div class="card-box">
+            <h2 class="card-box-title">Tambah Kontak Baru</h2>
+            <form hx-post="{% url 'contacts:contact_add' %}"
+                  hx-target="#contact-rows"
+                  hx-swap="innerHTML"
+                  hx-on::after-request="if (event.detail.successful) this.reset()"
+                  class="add-contact-form">
+                {% csrf_token %}
+                <input type="text" name="name" placeholder="Nama Lengkap *" required class="form-input-custom">
+                <input type="email" name="email" placeholder="Alamat Email *" required class="form-input-custom">
+                <input type="text" name="phone" placeholder="No. Telepon (Opsional)" class="form-input-custom">
+                <button type="submit" class="btn-submit-contact">+ Tambah</button>
+            </form>
+        </div>
+
+        <!-- live search htmx -->
+        <div class="search-wrapper">
+            <input type="search" 
+                   name="q" 
+                   placeholder="Cari kontak berdasarkan nama, email, atau telepon..."
+                   hx-get="{% url 'contacts:contact_search' %}"
+                   hx-trigger="keyup changed delay:300ms, search"
+                   hx-target="#contact-rows"
+                   hx-indicator="#search-indicator"
+                   class="search-input-htmx"
+                   autocomplete="off">
+            <span id="search-indicator" class="htmx-indicator">✨ Sedang mencari kontak...</span>
+        </div>
+
+        <!-- tabel kontak -->
+        <div class="contacts-table-wrapper">
+            <table class="contacts-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Nama</th>
+                        <th style="width: 30%;">Email</th>
+                        <th style="width: 20%;">Telepon</th>
+                        <th style="width: 20%; text-align: right;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="contact-rows">
+                    {% include "contacts/_contact_rows.html" %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}

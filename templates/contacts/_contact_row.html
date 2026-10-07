@@ -1,0 +1,22 @@
+<tr id="contact-{{ contact.id }}">
+  <td style="font-weight: 600; color: #2b181e;">{{ contact.name }}</td>
+  <td style="color: #78535e;">{{ contact.email }}</td>
+  <td style="color: #78535e;">{{ contact.phone|default:"-" }}</td>
+  <td style="text-align: right; white-space: nowrap;">
+    <button type="button" 
+            class="btn-action-edit"
+            hx-get="{% url 'contacts:contact_edit' contact.id %}"
+            hx-target="closest tr"
+            hx-swap="outerHTML">
+      Edit
+    </button>
+    <button type="button"
+            class="btn-action-delete"
+            hx-delete="{% url 'contacts:contact_delete' contact.id %}"
+            hx-target="closest tr"
+            hx-swap="outerHTML"
+            hx-confirm="Yakin ingin menghapus {{ contact.name }}?">
+      Hapus
+    </button>
+  </td>
+</tr>
