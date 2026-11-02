@@ -308,9 +308,9 @@
     <!-- script ajax fetch api, live search experience, & modal form -->
     <script>
         const CURRENT_USER = "{{ user.username|default:'' }}";
-        const IS_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
-        const IS_SUPERUSER = {{ user.is_superuser|yesno:"true,false" }};
-        const IS_EDITOR = {{ is_editor|yesno:"true,false" }};
+        const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+        const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
+        const IS_EDITOR = "{{ is_editor|yesno:'true,false' }}" === "true";
         const CSRF_TOKEN = "{{ csrf_token }}";
         const EXPERIENCES_API_URL = "{% url 'main:get_experiences_json' %}";
         const CREATE_EXPERIENCE_AJAX_URL = "{% url 'main:create_experience_ajax' %}";

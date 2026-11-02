@@ -334,56 +334,64 @@
     </div>
     {% endif %}
 
-    <!-- Script AJAX Fetch API, Live Search, & Modal Form -->
+    {% csrf_token %}
     <script>
-        const CURRENT_USER = "{{ user.username|default:'' }}";
-        const IS_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
-        const IS_SUPERUSER = {{ user.is_superuser|yesno:"true,false" }};
-        const IS_EDITOR = {{ is_editor|yesno:"true,false" }};
-        const CSRF_TOKEN = "{{ csrf_token }}";
-        const PROJECTS_API_URL = "{% url 'main:get_projects_json' %}";
-        const CREATE_PROJECT_AJAX_URL = "{% url 'main:create_project_ajax' %}";
-        const STAR_BASE_URL = "{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000/', '');
-        const LOGIN_URL = "{% url 'main:login' %}";
+        // endpoint drf 
+        const BASE_PROJECTS_ENDPOINT = "{% url 'api:project-list' %}";
+        const DETAIL_PROJECT_ENDPOINT = "{% url 'api:project-detail' '00000000-0000-0000-0000-000000000000' %}";
+        const STAR_PROJECT_ENDPOINT = "{% url 'api:project-star' '00000000-0000-0000-0000-000000000000' %}";
+        const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
+        const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+        const IS_EDITOR = "{{ is_editor|yesno:'true,false' }}" === "true";
 
-        const searchForm = document.getElementById('project-search-form');
-        const searchInput = document.getElementById('search-input');
         const loadingState = document.getElementById('loading-state');
         const errorState = document.getElementById('error-state');
         const emptyState = document.getElementById('empty-state');
         const emptyStateMessage = document.getElementById('empty-state-message');
         const projectsGrid = document.getElementById('projects-grid');
+        const searchForm = document.getElementById('project-search-form');
+        const searchInput = document.getElementById('search-input');
 
-        // Elemen Modal Tambah Proyek
+        // elemen modal tambah proyek
         const addProjectModal = document.getElementById('add-project-modal');
         const btnOpenAddModal = document.getElementById('btn-open-add-modal');
         const btnCloseAddModal = document.getElementById('btn-close-add-modal');
         const btnCancelAddModal = document.getElementById('btn-cancel-add-modal');
         const addProjectForm = document.getElementById('add-project-form');
 
-        let searchDebounceTimer = null;
-        let currentAbortController = null;
+        let projectsAbortController;
+        let searchDebounceTimer;
 
-        // Sanitasi teks untuk mencegah stored/reflected XSS di frontend
+        // ambil cookie csrf buat request post/put/delete
+        function getCookie(name) {
+            const prefix = `${name}=`;
+            const cookie = document.cookie.split(';').map(value => value.trim())
+                .find(value => value.startsWith(prefix));
+            return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+        }
+
+        // bersihin karakter berbahaya biar aman dari xss
         function escapeHtml(value) {
-            if (value === null || value === undefined) return '';
-            return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+            return String(value ?? '').replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
         }
 
-        // Pengatur visibilitas container state
-        function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
-            loadingState.classList.toggle('hide', !showLoading);
-            errorState.classList.toggle('hide', !showError);
-            emptyState.classList.toggle('hide', !showEmpty);
-            projectsGrid.classList.toggle('hide', !showGrid);
+        // helper buat ganti dummy uuid di url endpoint drf
+        function projectEndpoint(pattern, id) {
+            return pattern.replace('00000000-0000-0000-0000-000000000000', id);
         }
 
-        // Buka / Tutup Modal Popover
+        // atur visibilitas state halaman
+        function displayPageSection({ showLoading = false, showError = false,
+            showEmpty = false, showGrid = false }) {
+            if (loadingState) loadingState.classList.toggle('hide', !showLoading);
+            if (errorState) errorState.classList.toggle('hide', !showError);
+            if (emptyState) emptyState.classList.toggle('hide', !showEmpty);
+            if (projectsGrid) projectsGrid.classList.toggle('hide', !showGrid);
+        }
+
+        // fungsi buka tutup modal popover
         function openModal() {
             if (addProjectModal) {
                 addProjectModal.showPopover();
@@ -403,51 +411,7 @@
         if (btnCloseAddModal) btnCloseAddModal.addEventListener('click', closeModal);
         if (btnCancelAddModal) btnCancelAddModal.addEventListener('click', closeModal);
 
-        // Submit form tambah proyek via AJAX POST
-        if (addProjectForm) {
-            addProjectForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const submitBtn = document.getElementById('btn-submit-project');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Menyimpan...';
-                }
-
-                const formData = new FormData(addProjectForm);
-
-                try {
-                    const response = await fetch(CREATE_PROJECT_AJAX_URL, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRFToken': CSRF_TOKEN,
-                        }
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok && result.status === 'success') {
-                        closeModal();
-                        showToast("Berhasil!", "Proyek baru berhasil ditambahkan.", "success");
-                        // Refresh daftar proyek secara asinkronus
-                        fetchProjects(searchInput.value.trim());
-                    } else {
-                        const errorMsg = result.message || "Gagal menambahkan proyek. Silakan periksa isian kamu.";
-                        showToast("Gagal!", errorMsg, "error");
-                    }
-                } catch (error) {
-                    console.error('Error submitting project:', error);
-                    showToast("Error!", "Terjadi kesalahan jaringan saat menyimpan data.", "error");
-                } finally {
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Simpan Proyek';
-                    }
-                }
-            });
-        }
-
-        // Membuat elemen kartu proyek
+        // bikin komponen kartu proyek dari data drf
         function buildProjectCardElement(item) {
             const card = document.createElement('article');
             card.className = 'project-card';
@@ -456,9 +420,9 @@
             const safeCategory = escapeHtml(item.category || 'Web Development');
             const safeTech = escapeHtml(item.tech_stack || '');
             const safeDescription = escapeHtml(item.description || '').replace(/\n/g, '<br>');
-            const safeThumbnail = item.thumbnail ? escapeHtml(item.thumbnail) : '';
+            const imageUrl = item.thumbnail || item.project_image_url;
+            const safeThumbnail = imageUrl ? escapeHtml(imageUrl) : '';
 
-            // Thumbnail foto jika ada
             let thumbnailHtml = '';
             if (safeThumbnail) {
                 thumbnailHtml = `
@@ -468,29 +432,25 @@
                 `;
             }
 
-            // Bagian tombol Star
             let starHtml = '';
             if (IS_AUTHENTICATED) {
                 const isStarredClass = item.is_starred ? 'starred' : '';
                 const starLabel = item.is_starred ? '★ Starred' : '☆ Star';
                 starHtml = `
-                    <form method="POST" action="${STAR_BASE_URL}${encodeURIComponent(item.pk)}/" style="display: inline; margin: 0;">
-                        <input type="hidden" name="csrfmiddlewaretoken" value="${CSRF_TOKEN}">
-                        <button type="submit" class="btn-star ${isStarredClass}">
-                            ${starLabel}
-                            <span class="star-count">${item.star_count}</span>
-                        </button>
-                    </form>
+                    <button type="button" class="btn-star ${isStarredClass}"
+                            data-action="star" data-id="${escapeHtml(item.id)}"
+                            title="${escapeHtml(item.starred_by_names || '')}">
+                        ${starLabel} <span class="star-count">${item.star_count}</span>
+                    </button>
                 `;
             } else {
                 starHtml = `
-                    <a href="${LOGIN_URL}" class="btn-star" title="Login untuk memberi star">
+                    <a href="{% url 'main:login' %}" class="btn-star" title="Login untuk memberi star">
                         ☆ Star <span class="star-count">${item.star_count}</span>
                     </a>
                 `;
             }
 
-            // Bagian Tech Stack jika diisi
             let techHtml = '';
             if (safeTech) {
                 techHtml = `
@@ -500,21 +460,20 @@
                 `;
             }
 
-            // Bagian Tombol Aksi (Edit & Delete)
             let actionHtml = '';
             if (IS_SUPERUSER || IS_EDITOR) {
                 let deleteButtonHtml = '';
                 if (IS_SUPERUSER) {
                     deleteButtonHtml = `
-                        <a href="/delete-project/${encodeURIComponent(item.pk)}/" onclick="return confirm('Apakah kamu yakin ingin menghapus proyek ini?');" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #ffc9c9;">
+                        <button type="button" data-action="delete" data-id="${escapeHtml(item.id)}" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fff0f0; color: #d93025; border-radius: 8px; font-weight: 600; font-size: 0.85rem; border: 1px solid #ffc9c9; cursor: pointer;">
                             Delete
-                        </a>
+                        </button>
                     `;
                 }
 
                 actionHtml = `
                     <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #fce8ec;">
-                        <a href="/edit-project/${encodeURIComponent(item.pk)}/" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fdf0f3; color: #b82346; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #f4d3db;">
+                        <a href="/edit-project/${encodeURIComponent(item.id)}/" style="flex: 1; text-align: center; padding: 0.45rem 0.8rem; background-color: #fdf0f3; color: #b82346; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; border: 1px solid #f4d3db;">
                             Edit
                         </a>
                         ${deleteButtonHtml}
@@ -537,77 +496,117 @@
             return card;
         }
 
-        // Mengambil data proyek via Fetch API
+        // ambil daftar proyek via ajax fetch ke endpoint drf
         async function fetchProjects(searchQuery = '') {
-            // Batalkan request yang sedang berlangsung jika ada pencarian baru
-            if (currentAbortController) {
-                currentAbortController.abort();
-            }
-            currentAbortController = new AbortController();
-
-            displayPageSection({ showLoading: true });
-
+            if (projectsAbortController) projectsAbortController.abort();
+            projectsAbortController = new AbortController();
             try {
-                const url = new URL(PROJECTS_API_URL, window.location.origin);
-                if (searchQuery) {
-                    url.searchParams.set('title', searchQuery);
-                }
-
-                const response = await fetch(url.toString(), {
-                    signal: currentAbortController.signal,
-                    headers: {
-                        'Accept': 'application/json',
-                    }
+                displayPageSection({ showLoading: true });
+                const url = new URL(BASE_PROJECTS_ENDPOINT, window.location.origin);
+                if (searchQuery) url.searchParams.set('title', searchQuery);
+                const response = await fetch(url, {
+                    headers: { Accept: 'application/json' },
+                    signal: projectsAbortController.signal,
                 });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const projects = await response.json();
-
-                if (!Array.isArray(projects) || projects.length === 0) {
-                    if (searchQuery) {
-                        emptyStateMessage.textContent = `Tidak ditemukan proyek dengan kata kunci "${searchQuery}".`;
-                    } else {
-                        emptyStateMessage.textContent = 'Belum ada proyek yang ditambahkan.';
+                
+                if (projects.length === 0) {
+                    if (emptyStateMessage) {
+                        emptyStateMessage.textContent = searchQuery 
+                            ? `Tidak ditemukan proyek dengan kata kunci "${searchQuery}".`
+                            : 'Belum ada proyek yang ditambahkan.';
                     }
                     displayPageSection({ showEmpty: true });
                 } else {
-                    projectsGrid.innerHTML = '';
-                    projects.forEach(project => {
-                        const cardElement = buildProjectCardElement(project);
-                        projectsGrid.appendChild(cardElement);
-                    });
+                    projectsGrid.replaceChildren(...projects.map(buildProjectCardElement));
                     displayPageSection({ showGrid: true });
                 }
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    // Diabaikan karena dibatalkan oleh pencarian yang lebih baru
-                    return;
-                }
-                console.error('Error fetching projects:', error);
+                if (error.name === 'AbortError') return;
+                console.error(error);
                 displayPageSection({ showError: true });
             }
         }
 
-        // Event listener live search dengan debounce 300ms
-        searchInput.addEventListener('input', (event) => {
-            clearTimeout(searchDebounceTimer);
-            const query = event.target.value.trim();
-            searchDebounceTimer = setTimeout(() => {
-                fetchProjects(query);
-            }, 300);
+        // ekstrak pesan error dari response drf
+        function apiErrorMessage(data, status) {
+            const messages = Object.values(data).flat().filter(value => typeof value === 'string');
+            return messages.join(' ') || `Request failed (HTTP ${status}).`;
+        }
+
+        // helper universal buat request tulis (post, patch, delete) ke api
+        async function writeProject(url, method, payload) {
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: payload === undefined ? undefined : JSON.stringify(payload),
+            });
+            if (response.status === 204) return null;
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(apiErrorMessage(data, response.status));
+            return data;
+        }
+
+        // submit form tambah proyek via drf post
+        async function addProject(event) {
+            event.preventDefault();
+            const button = addProjectForm.querySelector('button[type="submit"]');
+            if (button) button.disabled = true;
+            try {
+                const fields = new FormData(addProjectForm);
+                const payload = Object.fromEntries([
+                    'title', 'description', 'category', 'tech_stack', 'project_url', 'thumbnail',
+                ].map(name => [name, fields.get(name)]));
+                await writeProject(BASE_PROJECTS_ENDPOINT, 'POST', payload);
+                closeModal();
+                showToast('Success', 'Project created.', 'success');
+                await fetchProjects(searchInput.value.trim());
+            } catch (error) {
+                showToast('Could not create project', error.message, 'error');
+            } finally {
+                if (button) button.disabled = false;
+            }
+        }
+
+        if (addProjectForm) addProjectForm.addEventListener('submit', addProject);
+
+        // event delegation buat klik star atau delete di kartu proyek
+        projectsGrid.addEventListener('click', async function(event) {
+            const button = event.target.closest('button[data-action]');
+            if (!button || button.disabled) return;
+            const action = button.dataset.action;
+            if (action === 'delete' && !window.confirm('Delete this project?')) return;
+            button.disabled = true;
+            try {
+                const pattern = action === 'star' ? STAR_PROJECT_ENDPOINT : DETAIL_PROJECT_ENDPOINT;
+                await writeProject(projectEndpoint(pattern, button.dataset.id),
+                    action === 'star' ? 'POST' : 'DELETE');
+                showToast('Success', action === 'star' ? 'Star updated.' : 'Project deleted.', 'success');
+                await fetchProjects(searchInput.value.trim());
+            } catch (error) {
+                showToast('Request failed', error.message, 'error');
+            } finally {
+                button.disabled = false;
+            }
         });
 
-        // Event listener saat submit form pencarian
-        searchForm.addEventListener('submit', (event) => {
+        // live search dengan jeda debounce 300ms
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => fetchProjects(searchInput.value.trim()), 300);
+        });
+
+        searchForm.addEventListener('submit', function(event) {
             event.preventDefault();
             clearTimeout(searchDebounceTimer);
             fetchProjects(searchInput.value.trim());
         });
 
-        // Muat proyek pertama kali saat halaman dibuka
         document.addEventListener('DOMContentLoaded', () => {
             fetchProjects(searchInput.value.trim());
         });
