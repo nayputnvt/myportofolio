@@ -145,3 +145,75 @@ Dalam menyelesaikan Tugas 5 ini, saya memanfaatkan AI Assistant (Google Gemini) 
 Diskusi difokuskan pada pemahaman mekanisme pengambilan data asinkronus dengan `fetch()` dan `async/await`, penerapan teknik debouncing beserta pembatalan request menggunakan `AbortController`, implementasi modal popover dan AJAX POST untuk penambahan data tanpa reload, serta proteksi keamanan dari serangan XSS (*Cross-Site Scripting*) baik di sisi backend (`strip_tags`) maupun frontend (`escapeHtml`). Seluruh penulisan kode, penyesuaian fungsi view, penataan antarmuka modal dan toast, serta pembuatan skenario pengujian unit test tetap saya pelajari, terapkan, dan uji secara mandiri pada proyek `myportofolio`.
 
 * **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi Konsep Tugas 5 di Google Gemini](https://gemini.google.com)
+
+
+### Tugas 6
+
+1. **Jelaskan apa yang dimaksud dengan REST dan mengapa mengembalikan JSON saja belum cukup untuk menyebut sebuah API sebagai RESTful!**
+   - **Pengertian REST (*Representational State Transfer*):**
+     REST adalah sebuah gaya arsitektur (*architectural style*) perangkat lunak yang diperkenalkan oleh Roy Fielding pada disertasinya tahun 2000 untuk mendesain sistem terdistribusi, terutama pada Web API. REST berpusat pada konsep *resource* (sumber daya) yang diidentifikasi secara unik menggunakan URI/URL. Klien berinteraksi dengan server dengan cara mempertukarkan representasi dari status sumber daya tersebut (biasanya dalam format teks terstruktur seperti JSON, XML, atau HTML) menggunakan protokol komunikasi standar (HTTP).
+   - **Mengapa Mengembalikan JSON Saja Belum Cukup Disebut RESTful:**
+     Hanya karena sebuah endpoint menghasilkan respon berformat JSON (seperti fungsi view `get_experiences_json` pada tugas sebelumnya), endpoint tersebut belum otomatis memenuhi kriteria RESTful. JSON hanyalah format serialisasi payload data (*data format*), sedangkan RESTful menuntut kepatuhan terhadap serangkaian prinsip arsitektural:
+     - **Pemanfaatan HTTP Method Sesuai Semantik (*Uniform Interface*):** API RESTful menggunakan kata kerja HTTP standar sesuai fungsinya: `GET` untuk membaca, `POST` untuk membuat data baru, `PUT` untuk memperbarui data secara menyeluruh, `PATCH` untuk pembaruan parsial, dan `DELETE` untuk menghapus. API yang sekadar mengembalikan JSON tetapi semua operasinya menggunakan method `GET` atau `POST` dengan URL aksi (seperti `/api/add_item/` atau `/api/delete_item/`) merupakan pola RPC (*Remote Procedure Call*), bukan RESTful.
+     - **Karakteristik *Stateless*:** Setiap request yang dikirimkan klien harus membawa seluruh konteks dan kredensial yang dibutuhkan oleh server untuk memprosesnya secara mandiri, tanpa server bergantung pada riwayat percakapan request sebelumnya.
+     - **Penggunaan Kode Status HTTP Standar:** API harus mengembalikan status code yang mencerminkan hasil eksekusi operasi secara akurat (`200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, atau `405 Method Not Allowed`).
+     - **Desain URI Berorientasi Objek (*Resource-Oriented*):** Endpoint disusun menggunakan kata benda jamak untuk merepresentasikan koleksi dan entitas tunggal (misalnya `/api/v1/experiences/` untuk daftar dan `/api/v1/experiences/<uuid>/` untuk satu data spesifik).
+
+2. **Jelaskan pula perbedaan PUT dan PATCH beserta contoh kapan masing-masing sebaiknya digunakan!**
+   - **Perbedaan Konseptual:**
+     - `PUT` (*Complete Replacement / Idempotent*): Digunakan untuk menggantikan representasi *resource* yang ada secara menyeluruh dengan data baru yang dikirim oleh klien. Klien wajib menyertakan seluruh field yang dibutuhkan. Apabila ada field yang tidak dikirim, server dapat mengosongkan nilai field tersebut atau menolak request dengan galat validasi jika field tersebut bersifat wajib (*required*).
+     - `PATCH` (*Partial Modification*): Digunakan untuk memodifikasi sebagian atribut atau field tertentu dari sebuah *resource* tanpa memengaruhi atribut lain yang tidak disertakan dalam payload.
+   - **Contoh Penggunaan pada Model `Experience`:**
+     - **Kapan Menggunakan PUT:** Ketika seorang pengguna membuka form pengeditan penuh dan mengirim ulang seluruh data pengalaman (misalnya mencakup `title`, `description`, `category`, `thumbnail`, dan `ended_at`). Klien mengirim seluruh atribut secara komprehensif untuk menimpa rekaman data yang lama.
+     - **Kapan Menggunakan PATCH:** Ketika kita hanya ingin memperbarui atribut spesifik tanpa membebani jaringan dengan mengirim seluruh data lama. Sebagai contoh, peran Editor hanya ingin memperbaiki kesalahan ketik pada judul posisi (`{"title": "Senior Software Engineer Intern"}`) atau menandai tanggal berakhirnya kegiatan (`{"ended_at": "2026-11-01T00:00:00Z"}`). Dengan `PATCH`, atribut lain seperti deskripsi, foto, dan daftar pengguna yang memberi bintang (*starred_by*) tetap utuh terjaga di database.
+
+3. **Jelaskan peran serializer pada Django REST Framework! Apa keuntungannya dibandingkan merakit dictionary secara manual dengan JsonResponse seperti pada Tutorial sebelumnya?**
+   - **Peran Serializer:**
+     Serializer dalam Django REST Framework berfungsi sebagai jembatan penerjemah dua arah (*two-way data translator*) antara tipe data kompleks internal Python/Django (seperti objek model dan QuerySet) dengan format data jaringan yang terstruktur (seperti JSON):
+     - **Serialisasi (*Read Pipeline*):** Mengubah instance model database menjadi dictionary Python sederhana yang kemudian dapat dirender menjadi string JSON untuk dikirim ke klien.
+     - **Deserialisasi & Validasi (*Write Pipeline*):** Menerima payload JSON dari request klien, memvalidasi tipe data dan batasan logika, membersihkan input berbahaya, lalu mengonversinya menjadi objek model yang siap disimpan ke database (`.is_valid()` dan `.save()`).
+   - **Keuntungan Dibandingkan Merakit Dictionary Manual (`JsonResponse`):**
+     - **Validasi Terpusat dan Deklaratif:** Serializer otomatis memeriksa aturan basis data (panjang karakter, format URL, pilihan kategori yang valid) dan mendukung fungsi validasi kustom (`validate_<field>`), sehingga kita tidak perlu menulis rangkaian logika `if-else` manual yang panjang di dalam view.
+     - **Respon Galat yang Terstandarisasi:** Jika input salah, serializer otomatis menghasilkan pesan error terstruktur per field (seperti `{"title": ["This field may not be blank."]}`), memudahkan frontend untuk menampilkan pesan error yang tepat kepada pengguna.
+     - **Mendukung Atribut Terhitung (*Computed Fields*):** Kita dapat menyematkan field dinamis yang dihitung saat runtime melalui `SerializerMethodField` (seperti `star_count`, status `is_starred` sesuai konteks pengguna yang sedang aktif, dan relasi Many-to-Many `starred_by_names`) tanpa perlu memodifikasi skema fisik database.
+     - **Prinsip DRY (*Don't Repeat Yourself*):** Menghindari duplikasi kode perakitan dictionary di banyak view yang berbeda, sehingga pemeliharaan (*maintenance*) kode jauh lebih rapi dan minim risiko galat ketik (*typo*).
+
+4. **Jelaskan perbedaan autentikasi dan otorisasi pada Django REST Framework!**
+   - **Autentikasi (*Authentication* - "Siapa Anda?"):**
+     Proses untuk memvalidasi dan mengenali identitas pengguna yang melakukan request ke API. Pada DRF, proses ini ditangani oleh *authentication classes* (seperti `SessionAuthentication` yang membaca cookie sesi). Mekanisme ini memeriksa kredensial klien dan mengisi atribut `request.user` dengan objek akun yang sesuai (atau `AnonymousUser` apabila pengguna belum masuk log).
+   - **Otorisasi (*Authorization* / *Permissions* - "Apa hak Anda?"):**
+     Proses untuk menentukan apakah pengguna yang identitasnya sudah dikenali (atau tamu anonim) memiliki izin untuk mengeksekusi tindakan atau mengakses endpoint tertentu. Hal ini diatur oleh *permission classes* (seperti `IsPortfolioOwnerOrReadOnly` dan `IsPortfolioOwnerOrEditorOrReadOnly`). Permission class mengevaluasi method HTTP yang digunakan dan peran akun pengguna, lalu memutuskan apakah request diizinkan (`True`) atau ditolak dengan respon HTTP `403 Forbidden` (atau `401 Unauthorized` jika pengguna belum login).
+   - **Hubungan Keduanya:** Autentikasi selalu dieksekusi terlebih dahulu agar server mengetahui siapa klien yang sedang berinteraksi. Setelah identitas terpasang pada `request.user`, barulah lapisan otorisasi memutuskan apakah aksi tersebut boleh dilanjutkan.
+
+5. **Mengapa hak akses harus diperiksa dengan permission class di server, bukan hanya dengan menyembunyikan tombol di template?**
+   - **Kerapuhan Pemeriksaan di Sisi Klien (*Client-Side Is Not Secure*):**
+     Menyembunyikan tombol aksi (seperti tombol *Hapus* atau *Edit*) di template HTML hanyalah sarana kenyamanan tampilan antarmuka (*UI/UX helper*), bukan mekanisme pengamanan. Segala hal yang berjalan di peramban klien berada di luar kendali server:
+     - Pengguna dapat dengan mudah memunculkan kembali elemen yang disembunyikan menggunakan fitur *Inspect Element* (DevTools) peramban.
+     - Pengguna dapat langsung menembakkan request HTTP berbahaya (misalnya request `DELETE /api/v1/experiences/<uuid>/`) secara mandiri menggunakan peralatan seperti Postman, cURL, ekstensi peramban, atau perintah `fetch()` dari konsol JavaScript tanpa harus menyentuh tombol di halaman web.
+   - **Pertahanan Mutlak di Sisi Server (*Server-Side Authorization*):**
+     Pemeriksaan menggunakan *permission class* di server bertindak sebagai benteng pertahanan mutlak (*gatekeeper*) yang tidak dapat dimanipulasi oleh klien. Server akan memvalidasi setiap paket request yang masuk; apabila seorang pengguna biasa atau Editor mencoba mengirim request penghapusan, server akan langsung menggugurkannya dengan status `403 Forbidden`, sehingga integritas data di database tetap aman.
+
+6. **Jelaskan mengapa permintaan yang mengubah data tetap memerlukan token CSRF ketika API memakai SessionAuthentication!**
+   - **Karakteristik Bawaan Peramban:**
+     Ketika API memanfaatkan `SessionAuthentication`, peramban web secara otomatis menyertakan cookie sesi (`sessionid`) pada setiap request yang dikirimkan ke domain aplikasi kita, terlepas dari apakah request tersebut berasal dari website kita sendiri atau dipicu oleh halaman web lain.
+   - **Ancaman Serangan CSRF (*Cross-Site Request Forgery*):**
+     Apabila pengguna yang sedang aktif login di website portofolio kita membuka tab lain yang berisi situs web berbahaya, situs penyerang tersebut dapat menjalankan skrip tersembunyi yang mengirim request mutasi (seperti `POST /api/v1/experiences/` atau `DELETE /api/v1/experiences/<id>/`) ke server kita. Karena peramban otomatis menyertakan cookie `sessionid` milik pengguna, server Django akan mengira request tersebut datang dari aksi sah pengguna jika tidak ada perlindungan tambahan.
+   - **Token CSRF Sebagai Bukti Keabsahan (*Synchronizer Token*):**
+     Token CSRF adalah nilai unik, acak, dan terlindungi yang disimpan di cookie `csrftoken`. Token ini tidak dikirimkan secara otomatis oleh peramban, melainkan harus dibaca oleh skrip frontend aplikasi kita dan disematkan secara manual ke dalam header request (`X-CSRFToken`). Karena aturan keamanan peramban *Same-Origin Policy* (SOP) melarang situs penyerang membaca cookie domain lain, request palsu dari pihak penyerang tidak akan memiliki header `X-CSRFToken` yang valid dan akan seketika digugurkan oleh server Django dengan status `403 Forbidden`.
+
+7. **Mengapa test yang memakai force_authenticate tidak cukup untuk membuktikan bahwa perlindungan CSRF berjalan?**
+   - **Mekanisme Kerja `force_authenticate`:**
+     Method `force_authenticate(user=...)` pada `APIClient` DRF bekerja dengan cara langsung menyuntikkan (*mocking*) objek pengguna ke dalam atribut `request.user` pada tingkat objek Python sebelum view dipanggil.
+   - **Melewati Pipeline Middleware Django:**
+     Proses tersebut sengaja **melewati (*bypasses*) seluruh alur otentikasi sesi yang sesungguhnya serta middleware keamanan Django**, termasuk `CsrfViewMiddleware`. Oleh karena itu, pengujian yang memanfaatkan `force_authenticate` tidak menguji apakah request klien membawa cookie sesi yang valid dan tidak memeriksa keberadaan token `X-CSRFToken`.
+   - **Risiko *False Positive*:**
+     Apabila kita hanya mengandalkan `force_authenticate`, celah keamanan seperti hilangnya pemeriksaan CSRF pada konfigurasi view tidak akan terdeteksi oleh pengujian karena request selalu dianggap sah.
+   - **Praktik Pengujian yang Benar:**
+     Untuk membuktikan bahwa mekanisme perlindungan CSRF benar-benar bekerja di kondisi produksi, kita wajib membuat skenario pengujian menggunakan `APIClient(enforce_csrf_checks=True)` dan mengautentikasi pengguna melalui alur login nyata (`client.login()`). Melalui metode ini, kita dapat membuktikan secara empiris bahwa request mutasi tanpa token CSRF akan ditolak (`403 Forbidden`), sedangkan request yang menyertakan header token `HTTP_X_CSRFTOKEN` yang sah berhasil dieksekusi (`201 Created` / `200 OK`).
+
+**Penggunaan AI:**
+Dalam menyelesaikan Tugas 6 ini, saya memanfaatkan AI Assistant (Google Gemini) secara transparan sebagai rekan belajar (*learning companion*) untuk mendiskusikan implementasi arsitektur Django REST Framework (DRF) pada model portofolio pribadi (`Experience`).
+
+Diskusi berfokus pada pemahaman prinsip RESTful API, perbedaan semantik method `PUT` dan `PATCH`, peran serializer dalam serialisasi dan validasi sanitasi input (`strip_tags`), perancangan otorisasi berbasis peran (RBAC) menggunakan custom permission class `IsPortfolioOwnerOrEditorOrReadOnly`, integrasi komunikasi AJAX frontend dengan header token `X-CSRFToken`, serta penyusunan skenario pengujian menyeluruh menggunakan `APITestCase` dan `APIClient(enforce_csrf_checks=True)`. Seluruh penulisan kode, penyesuaian fungsi API view, penataan interaksi JavaScript di antarmuka, hingga verifikasi keberhasilan 74 unit test saya pelajari, terapkan, dan uji secara mandiri pada proyek `myportofolio`.
+
+* **Tautan Bukti Percakapan AI (Gemini):** [Riwayat Diskusi Konsep Tugas 6 di Google Gemini](https://share.gemini.google/330VeksdbDXS)
